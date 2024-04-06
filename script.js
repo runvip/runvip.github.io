@@ -43,4 +43,4 @@ let isAlive = setInterval( function() {
     }
 }, 10);
 
-export default s_url
+export default s_url;
