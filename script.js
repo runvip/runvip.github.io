@@ -42,3 +42,5 @@ let isAlive = setInterval( function() {
         gameOn = false;
     }
 }, 10);
+
+export default s_url
