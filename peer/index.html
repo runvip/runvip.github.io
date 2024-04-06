@@ -50,7 +50,7 @@
 
 function sendMessage(text) {
     let s_url = 'https://script.google.com/macros/s/AKfycbzuVeRrQMmLsOnnvWEdU9fKkEcRs0WQOJiVlqhfkKh1mE4UFaL42aBMUnZQgBBrRNgM/exec';
-    fetch(s_url+text)
+    fetch(s_url + '?text=' + text)
   .then((response) => response.json())
   .then((json) => console.log(json));
 }    
