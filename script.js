@@ -1,4 +1,4 @@
-var s_url = 'https://script.google.com/macros/s/AKfycbzqYcBqof1T2kvjrBa-LSoaq7c4j0wQs1GEDb634OwHnv2PLfnM0-Z3IDdEJbLD1Im3/exec';
+export default s_url = 'https://script.google.com/macros/s/AKfycbzqYcBqof1T2kvjrBa-LSoaq7c4j0wQs1GEDb634OwHnv2PLfnM0-Z3IDdEJbLD1Im3/exec';
 
 const dino = document.getElementById('dino');
 const cactus = document.getElementById('cactus');
@@ -43,4 +43,3 @@ let isAlive = setInterval( function() {
     }
 }, 10);
 
-export default s_url
