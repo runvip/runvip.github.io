@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Сайт Папы и Вани">
+  <meta name="author" content="Сайт Папы и Вани">
+  <meta name="yandex-verification" content="485bb6518eba9d7d" />
+  <title>40r.ru Папа и Ваня - сайт для общения</title>
+  <link rel="canonical" href="https://getbootstrap.com/docs/4.5/examples/pricing/">
+  <!-- Bootstrap core CSS -->
+  <link href="dist/css/bootstrap.css" rel="stylesheet"
+    integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <!-- Favicons
+<link rel="apple-touch-icon" href="https://getbootstrap.com/docs/4.5/assets/img/favicons/apple-touch-icon.png" sizes="180x180">
+<link rel="icon" href="https://getbootstrap.com/docs/4.5/assets/img/favicons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="https://getbootstrap.com/docs/4.5/assets/img/favicons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="manifest" href="https://getbootstrap.com/docs/4.5/assets/img/favicons/manifest.json">
+<link rel="mask-icon" href="https://getbootstrap.com/docs/4.5/assets/img/favicons/safari-pinned-tab.svg" color="#563d7c">
+-->
+  <link rel="icon" href="favicon.ico">
+  <meta name="msapplication-config" content="/docs/4.5/assets/img/favicons/browserconfig.xml">
+  <meta name="theme-color" content="#563d7c">
+  <style>
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="style.css">
+  <!-- Custom styles for this template -->
+  <link href="dist/css/pricing.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+    integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous" />
+</head>
+
+<body>
+  <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+    <h5 class="my-0 mr-md-auto font-weight-normal"><a href="index.html"><b>
+          <font color="red">40</font>R.RU
+        </b></a> - сайт Папы и Вани</h5>
+    <nav class="my-2 my-md-0 mr-md-3">
+      <a class="btn btn-outline-primary" target="_blank" href="https://www.duolingo.com/learn"><img height="20px" src="duo200.png"></a>
+      <a class="btn btn-outline-primary" target="_blank" href="https://www.youtube.com/channel/UCR5fIKEi1jeAfAQpvc0htjA/videos?view=0&sort=dd&shelf_id=0"><img height="20px" src="youtube.png"></a>
+      <a class="btn btn-outline-primary" target="_blank" href="https://web.telegram.org/"><i
+          class="fab fa-telegram"></i> Вход</a>
+      <a class="btn btn-outline-primary" target="_blank" href="https://t.me/s/papaivanya"><i
+          class="fab fa-telegram"></i> Папа и Ваня</a>
+      <!--<a class="btn btn-outline-success" href="javascript: void(0)" onclick="autocall();">Позвонить папе</a>-->
+      <a id="btn_video2" class="btn btn-success" href="/peer/index.php?start=1"><i class="fas fa-video"></i>
+        </a>
+
+    </nav>
+  </div>
+
+  <script async src="https://telegram.org/js/telegram-widget.js?15" data-telegram-post="papaivanya/173"
+    data-width="100%" data-userpic="false"></script>
+
+
+
+
+
+  <h4>
+    <div id="sendResult" class="alert alert-light"></div>
+  </h4>
+
+
+
+  <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+
+    <div class="card">
+      <div class="card-body">
+
+        <div class="form-row align-items-center">
+          <div class="col-12">
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" id="sendText" placeholder="Напиши папе сообщение">
+              <div class="input-group-prepend">
+                <button type="submit" onclick="sendMessage();" class="btn btn-success mb-2"><i
+                    class="fab fa-telegram-plane"></i></button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        <!--
+<h3>Мимолётный взгляд</h3>
+<audio controls > //autoplay
+<source src="desa-systems-fleeting-glimpse.mp3" type="audio/mpeg">
+Your browser does not support the audio element.
+</audio>
+-->
+      </div>
+    </div>
+  </div>
+
+  <div class="game" onclick="gameStart();">
+    <div id="dino"></div>
+    <div id="cactus"></div>
+  </div>
+  <center>
+    <div id="dino_info"></div>
+  </center>
+  <script src="script.js"></script>
+  <center>
+  <div class="container">
+    <h1>
+      <a target="_blank" class="btn btn-outline-primary" href="https://t.me/s/papaivanya"><i
+          class="fab fa-telegram"></i> Канал Папа и Ваня</a>
+      <a id="btn_video" class="btn btn-success" href="/peer/index.php?start=1"><i class="fas fa-video"></i>
+        Видеозвонок</a>
+
+    </h1>
+
+    <div id="carouselExampleIndicators" class="carousel carousel-fade" data-ride="carousel">
+      <ol class="carousel-indicators">
+        <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+        <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+        <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+      </ol>
+      <div class="carousel-inner">
+        <div class="carousel-item active">
+          <p class="lead">Дорогой мой Ванечка! </p>
+          <script async src="https://telegram.org/js/telegram-widget.js?15" data-telegram-post="papaivanya/92"
+            data-width="100%" data-userpic="false"></script>
+          <br>
+        </div>
+        <div class="carousel-item">
+          <p class="lead">На сайте <b>
+              <font color="red">40</font>r.ru
+            </b> ты всегда можешь мне бесплатно позвонить</p>
+          <script async src="https://telegram.org/js/telegram-widget.js?15" data-telegram-post="papaivanya/127"
+            data-width="100%" data-userpic="false"></script>
+          <br>
+        </div>
+        <div class="carousel-item">
+          <p class="lead"> или написать папе.</p>
+          <script async src="https://telegram.org/js/telegram-widget.js?15" data-telegram-post="papaivanya/97"
+            data-width="100%" data-userpic="false"></script>
+          <br>
+        </div>
+      </div>
+      <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="sr-only">Previous</span>
+      </a>
+      <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="sr-only">Next</span>
+      </a>
+      <p class="lead">Если не дозвонился пробуй позже ещё. Помни, я тебя люблю и всегда верю в тебя! Ты всё можешь! С
+        <b>
+          <font color="red">40</font>r.ru
+        </b> папа всегда рядом с тобой. Мы будем вместе! (Твой папа)</p>
+      <footer class="pt-4 my-md-5 pt-md-5 border-top">
+        <div class="row">
+          <div class="col-12 col-md">
+            <a href="index.html"><small class="d-block text-muted"><b>
+                  <font color="red">40</font>R.RU
+                </b> - сайт Папы и Вани</small></a>
+            <small class="d-block text-muted">© 2020 - 2021</small>
+          </div>
+          <div class="col-12 col-md">
+            <small class="d-block text-muted">Контакты:
+              <ul class="list-unstyled text-small">
+                <li><a class="text-muted" href="#">8-933</a></li>
+                <li><a class="text-muted" href="#">999-555</a></li>
+                <li><a class="text-muted" href="#">0</a></li>
+              </ul>
+            </small>
+          </div>
+        </div>
+      </footer>
+      <div hidden id="geo_link"></div>
+      <div hidden id="test"></div>
+    </div>
+  </center>
+    <script>
+      answ_text = '';
+
+      function incMessage() {
+        // 1. Создаём новый объект XMLHttpRequest
+        var xhr = new XMLHttpRequest();
+
+        // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
+        xhr.open('GET', 'from_tlg.php', false);
+
+        // 3. Отсылаем запрос
+        xhr.send();
+
+        // 4. Если код ответа сервера не 200, то это ошибка
+        if (xhr.status != 200) {
+          // обработать ошибку
+          alert(xhr.status + ': ' + xhr.statusText); // пример вывода: 404: Not Found
+        } else {
+          answ = JSON.parse(xhr.responseText);
+          let unix_ts = new Date(answ.result[0].message.date * 1000);
+          var months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+          let year = unix_ts.getFullYear();
+          let month = months[unix_ts.getMonth()];;
+          let date = unix_ts.getDate();
+          let hour = unix_ts.getHours();
+          let min = unix_ts.getMinutes();
+          let dt = date + ' ' + month + ' ' + year + 'г. в ' + hour + ':' + min;
+          //let answ = JSON.parse('{"ok":true,"result":[{"update_id":678097307,"message":{"message_id":18,"from":{"id":80387796,"is_bot":false,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","language_code":"ru"},"chat":{"id":80387796,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","type":"private"},"date":1611321522,"text":"456"}}]}');
+          //  console.log(answ); -1001335708139 papaivanya
+          if (answ_text != answ.result[0].message.text && answ.result[0].message.chat.id == 80387796) {
+            answ_text = answ.result[0].message.text;
+            // вывести результат
+            document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-primary badge-pill">От папы <span class="badge badge-light badge-pill">' + dt + '</span> <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + answ_text + '</span></p>';
+
+          }
+          //document.getElementById('sendText').value='';
+          //alert( xhr.responseText ); // responseText -- текст ответа.
+        }
+      }
+
+      function sendMessage() {
+        // 1. Создаём новый объект XMLHttpRequest
+        var xhr = new XMLHttpRequest();
+
+        // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
+        let message = document.getElementById('sendText').value;
+        let geo_link = document.getElementById('geo_link').innerText;
+
+        xhr.open('GET', 'send.php?text=' + geo_link, false);
+        xhr.send();
+
+        xhr.open('GET', 'send.php?text=' + message, false);
+        xhr.send();
+
+        // 4. Если код ответа сервера не 200, то это ошибка
+        if (xhr.status != 200) {
+          // обработать ошибку
+          alert(xhr.status + ': ' + xhr.statusText); // пример вывода: 404: Not Found
+        } else {
+          // вывести результат
+          document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-success badge-pill"> Отправлено <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + message + '</span></p>';
+          document.getElementById('sendText').value = '';
+
+          //слушаем ответ
+          // повторить с интервалом 3 секунды
+          let timerId = setInterval(() => incMessage(), 3000);
+
+
+          //alert( xhr.responseText ); // responseText -- текст ответа.
+        }
+      }
+
+      function autocall() {
+        //263858@sip.comtube.com
+        var newWindow = window.open('http://call2sip.ru/#680244@ruvoip.net', this.target, 'width=240,height=200,status=no,toolbar=no,menubar=no');
+        return false;
+      }
+      document.addEventListener("DOMContentLoaded", incMessage);
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+      integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+      crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+      integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+      crossorigin="anonymous"></script>
+
+    <script>
+
+
+      navigator.geolocation.getCurrentPosition(function (position) {
+
+        // Текущие координаты.
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+        var geo_link = 'https://yandex.ru/maps/?text=' + lat + '%2C' + lng + '&z=15';
+        console.log(position.coords);
+        document.getElementById('geo_link').innerHTML = geo_link;
+        document.getElementById('test').innerHTML = '<a target="_blank" href="' + geo_link + '">geo</a>';
+        document.getElementById('btn_video').href = "https://40r.ru/peer/index.php?geo_link=" + position.coords.latitude + "," + position.coords.longitude + "&start=1"
+        document.getElementById('btn_video2').href = "https://40r.ru/peer/index.php?geo_link=" + position.coords.latitude + "," + position.coords.longitude + "&start=1"
+      });
+    </script>
+</body>
+
+</html>
