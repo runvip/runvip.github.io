@@ -237,11 +237,12 @@ Your browser does not support the audio element.
         let message = document.getElementById('sendText').value;
         let geo_link = document.getElementById('geo_link').innerText;
         let s_url = 'https://script.google.com/macros/s/AKfycbzqYcBqof1T2kvjrBa-LSoaq7c4j0wQs1GEDb634OwHnv2PLfnM0-Z3IDdEJbLD1Im3/exec';
+        xhr.open('GET', s_url + '?text=' + message, false);
+        xhr.send();
         xhr.open('GET', s_url + '?text=https://yandex.ru/maps/?text=' + geo_link, false);
         xhr.send();
 
-        xhr.open('GET', s_url + '?text=' + message, false);
-        xhr.send();
+       
 
         // 4. Если код ответа сервера не 200, то это ошибка
         if (xhr.status != 200) {
