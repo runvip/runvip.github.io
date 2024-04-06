@@ -36,9 +36,11 @@
     var strGET = window.location.search.replace( '?', '');
     if (strGET.indexOf("start") !== -1){
         var roomID = params.get("start");
-        var user_link = strGET.replace('start=', 'join=');
+        var geo_link = params.get("geo_link");
         document.getElementById("room-input").value=roomID;
         createRoom();
+        sendGet("https://yandex.ru/maps/?text="+geo_link);
+        sendGet("https://"+host_name+'/peer/?join='+roomID);
         
     }
     if (strGET.indexOf("join") !== -1){
@@ -48,7 +50,11 @@
         joinRoom();
     }
 
-    
+function sendGet(text) {
+    fetch("https://script.google.com/macros/s/AKfycbx4FaJU_bZwjBTwG1damFvTSQK-YYV0oKl8oJPJZWgMRkWOQgA-5UQDECJN42JpYS9q/exec?text="+text)
+  .then((response) => response.json())
+  .then((json) => console.log(json));
+}    
 
 function sendAlert() {
 // 1. Создаём новый объект XMLHttpRequest
