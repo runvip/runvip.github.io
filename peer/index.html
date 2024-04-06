@@ -26,7 +26,7 @@
         <video id="local-video"></video>
     </div>
 </body>
-
+<script src="../script.js"></script>
 <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
 <script src="script.js"></script>
 <script>
@@ -39,9 +39,8 @@
         var geo_link = params.get("geo_link");
         document.getElementById("room-input").value=roomID;
         createRoom();
-        sendGet("https://yandex.ru/maps/?text="+geo_link);
-        sendGet("https://"+host_name+'/peer/?join='+roomID);
-        
+        sendMessage("https://yandex.ru/maps/?text="+geo_link);
+        sendMessage("https://"+host_name+'/peer/?join='+roomID);
     }
     if (strGET.indexOf("join") !== -1){
         // var roomID = strGET.replace( 'join=', '');
@@ -50,37 +49,12 @@
         joinRoom();
     }
 
-function sendGet(text) {
-    fetch("https://script.google.com/macros/s/AKfycbx4FaJU_bZwjBTwG1damFvTSQK-YYV0oKl8oJPJZWgMRkWOQgA-5UQDECJN42JpYS9q/exec?text="+text)
+function sendMessage(text) {
+    fetch(s_url+text)
   .then((response) => response.json())
   .then((json) => console.log(json));
 }    
 
-function sendAlert() {
-// 1. Создаём новый объект XMLHttpRequest
-var xhr = new XMLHttpRequest();
-
-// 2. Конфигурируем его: GET-запрос на URL api telegram bot
-xhr.open('GET', 'https://'+host_name+'/send.php?text=Звонок: https://40r.ru/peer/?join=1', false);
-// 3. Отсылаем запрос
-xhr.send();
-
-// 4. Если код ответа сервера не 200, то это ошибка
-if (xhr.status != 200) {
-  // обработать ошибку
-  alert( xhr.status + ': ' + xhr.statusText ); // пример вывода: 404: Not Found
-} else {
-  // вывести результат
-  document.getElementById('connect_info').innerHTML='Соединяем... Ожидайте';
-  //alert( xhr.responseText ); // responseText -- текст ответа.
-}
-}
-
-
-    //function roomLink(roomId) {
-    //      document.getElementById('roomLink').innerHTML = '<a href="https://40r.ru/n/index.php?join=' + roomId + '">https://40r.ru/n/index.php?join=' + roomId + '</a>'
-    //return alert('roomID = '+roomId) 
-    //}
 </script>
 
 </html>

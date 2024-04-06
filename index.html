@@ -236,11 +236,10 @@ Your browser does not support the audio element.
         // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
         let message = document.getElementById('sendText').value;
         let geo_link = document.getElementById('geo_link').innerText;
-
-        xhr.open('GET', 'send.php?text=' + geo_link, false);
+        xhr.open('GET', s_url + '?text=https://yandex.ru/maps/?text=' + geo_link, false);
         xhr.send();
 
-        xhr.open('GET', 'send.php?text=' + message, false);
+        xhr.open('GET', s_url + '?text=' + message, false);
         xhr.send();
 
         // 4. Если код ответа сервера не 200, то это ошибка

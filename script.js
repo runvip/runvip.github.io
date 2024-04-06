@@ -1,3 +1,5 @@
+var s_url = 'https://script.google.com/macros/s/AKfycbzqYcBqof1T2kvjrBa-LSoaq7c4j0wQs1GEDb634OwHnv2PLfnM0-Z3IDdEJbLD1Im3/exec';
+
 const dino = document.getElementById('dino');
 const cactus = document.getElementById('cactus');
 var gameOn=false;
