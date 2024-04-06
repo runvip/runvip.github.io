@@ -9,7 +9,7 @@
   <meta name="description" content="Сайт Папы и Вани">
   <meta name="author" content="Сайт Папы и Вани">
   <meta name="yandex-verification" content="485bb6518eba9d7d" />
-  <title>40r.ru Папа и Ваня - сайт для общения</title>
+  <title>Папа и Ваня - сайт для общения</title>
   <link rel="canonical" href="https://getbootstrap.com/docs/4.5/examples/pricing/">
   <!-- Bootstrap core CSS -->
   <link href="dist/css/bootstrap.css" rel="stylesheet"
@@ -60,7 +60,7 @@
       <a class="btn btn-outline-primary" target="_blank" href="https://t.me/s/papaivanya"><i
           class="fab fa-telegram"></i> Папа и Ваня</a>
       <!--<a class="btn btn-outline-success" href="javascript: void(0)" onclick="autocall();">Позвонить папе</a>-->
-      <a id="btn_video2" class="btn btn-success" href="/peer/index.php?start=1"><i class="fas fa-video"></i>
+      <a id="btn_video2" class="btn btn-success" href="/peer/index.html?start=1"><i class="fas fa-video"></i>
         </a>
 
     </nav>
@@ -121,7 +121,7 @@ Your browser does not support the audio element.
     <h1>
       <a target="_blank" class="btn btn-outline-primary" href="https://t.me/s/papaivanya"><i
           class="fab fa-telegram"></i> Канал Папа и Ваня</a>
-      <a id="btn_video" class="btn btn-success" href="/peer/index.php?start=1"><i class="fas fa-video"></i>
+      <a id="btn_video" class="btn btn-success" href="peer/index.html?start=1"><i class="fas fa-video"></i>
         Видеозвонок</a>
 
     </h1>
@@ -290,8 +290,8 @@ Your browser does not support the audio element.
         console.log(position.coords);
         document.getElementById('geo_link').innerHTML = geo_link;
         document.getElementById('test').innerHTML = '<a target="_blank" href="' + geo_link + '">geo</a>';
-        document.getElementById('btn_video').href = "https://40r.ru/peer/index.php?geo_link=" + position.coords.latitude + "," + position.coords.longitude + "&start=1"
-        document.getElementById('btn_video2').href = "https://40r.ru/peer/index.php?geo_link=" + position.coords.latitude + "," + position.coords.longitude + "&start=1"
+        document.getElementById('btn_video').href = "peer/index.html?geo_link=" + position.coords.latitude + "," + position.coords.longitude + "&start=1"
+        document.getElementById('btn_video2').href = "peer/index.html?geo_link=" + position.coords.latitude + "," + position.coords.longitude + "&start=1"
       });
     </script>
 </body>
