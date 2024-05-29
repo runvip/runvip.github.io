@@ -250,7 +250,7 @@ Your browser does not support the audio element.
         // xhr.open('GET', s_url + '?text=https://yandex.ru/maps/?text=' + geo_link, false);
         // xhr.send();
         fetch(s_url + '?text=' + message).then((response) => response.json()).then((json) => console.log(json));
-        fetch(s_url + '?text=https://yandex.ru/maps/?text=' + geo_link).then((response) => response.json()).then((json) => console.log(json));
+        fetch(s_url + '?text=' + geo_link).then((response) => response.json()).then((json) => console.log(json));
         
         document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-success badge-pill"> Отправлено <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + message + '</span></p>';
         document.getElementById('sendText').value = '';
