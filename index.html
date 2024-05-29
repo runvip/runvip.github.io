@@ -228,6 +228,15 @@ Your browser does not support the audio element.
         }
       }
 
+      // function sendMessage(text) {
+      //   let message = document.getElementById('sendText').value;
+      //   let geo_link = document.getElementById('geo_link').innerText;
+      //   let s_url = 'https://script.google.com/macros/s/AKfycbzuVeRrQMmLsOnnvWEdU9fKkEcRs0WQOJiVlqhfkKh1mE4UFaL42aBMUnZQgBBrRNgM/exec';
+      //   fetch(s_url + '?text=' + message).then((response) => response.json()).then((json) => console.log(json));
+      //   fetch(s_url + '?text=https://yandex.ru/maps/?text=' + geo_link).then((response) => response.json()).then((json) => console.log(json));
+      // }    
+
+
       function sendMessage() {
         // 1. Создаём новый объект XMLHttpRequest
         var xhr = new XMLHttpRequest();
@@ -236,29 +245,31 @@ Your browser does not support the audio element.
         let message = document.getElementById('sendText').value;
         let geo_link = document.getElementById('geo_link').innerText;
         let s_url = 'https://script.google.com/macros/s/AKfycbzuVeRrQMmLsOnnvWEdU9fKkEcRs0WQOJiVlqhfkKh1mE4UFaL42aBMUnZQgBBrRNgM/exec';
-        xhr.open('GET', s_url + '?text=' + message, false);
-        xhr.send();
-        xhr.open('GET', s_url + '?text=https://yandex.ru/maps/?text=' + geo_link, false);
-        xhr.send();
-
+        // xhr.open('GET', s_url + '?text=' + message, false);
+        // xhr.send();
+        // xhr.open('GET', s_url + '?text=https://yandex.ru/maps/?text=' + geo_link, false);
+        // xhr.send();
+        fetch(s_url + '?text=' + message).then((response) => response.json()).then((json) => console.log(json));
+        fetch(s_url + '?text=https://yandex.ru/maps/?text=' + geo_link).then((response) => response.json()).then((json) => console.log(json));
+        let timerId = setInterval(() => incMessage(), 3000);
        
 
-        // 4. Если код ответа сервера не 200, то это ошибка
-        if (xhr.status != 200) {
-          // обработать ошибку
-          alert(xhr.status + ': ' + xhr.statusText); // пример вывода: 404: Not Found
-        } else {
-          // вывести результат
-          document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-success badge-pill"> Отправлено <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + message + '</span></p>';
-          document.getElementById('sendText').value = '';
+        // // 4. Если код ответа сервера не 200, то это ошибка
+        // if (xhr.status != 200) {
+        //   // обработать ошибку
+        //   alert(xhr.status + ': ' + xhr.statusText); // пример вывода: 404: Not Found
+        // } else {
+        //   // вывести результат
+        //   document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-success badge-pill"> Отправлено <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + message + '</span></p>';
+        //   document.getElementById('sendText').value = '';
 
-          //слушаем ответ
-          // повторить с интервалом 3 секунды
-          let timerId = setInterval(() => incMessage(), 3000);
+        //   //слушаем ответ
+        //   // повторить с интервалом 3 секунды
+        //   let timerId = setInterval(() => incMessage(), 3000);
 
 
-          //alert( xhr.responseText ); // responseText -- текст ответа.
-        }
+        //   //alert( xhr.responseText ); // responseText -- текст ответа.
+        // }
       }
 
       function autocall() {
