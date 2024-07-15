@@ -191,7 +191,44 @@ Your browser does not support the audio element.
     <script>
       answ_text = '';
 
+
       function incMessage() {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", "https://script.google.com/macros/s/AKfycbyG6lg8sqQuHwPCgb8kZ6lm9TpKDGL5_m1-_6xqNcCLz36e9wc5w9m3jeoLPvWC2q-ToA/exec", true);
+        xhr.onload = (e) => {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              console.log(xhr.responseText);
+              answ = JSON.parse(xhr.responseText);
+              let unix_ts = new Date(answ.result[0].message.date * 1000);
+              var months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+              let year = unix_ts.getFullYear();
+              let month = months[unix_ts.getMonth()];;
+              let date = unix_ts.getDate();
+              let hour = unix_ts.getHours();
+              let min = unix_ts.getMinutes();
+              let dt = date + ' ' + month + ' ' + year + 'г. в ' + hour + ':' + min;
+              //let answ = JSON.parse('{"ok":true,"result":[{"update_id":678097307,"message":{"message_id":18,"from":{"id":80387796,"is_bot":false,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","language_code":"ru"},"chat":{"id":80387796,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","type":"private"},"date":1611321522,"text":"456"}}]}');
+              //  console.log(answ); -1001335708139 papaivanya
+              if (answ_text != answ.result[0].message.text && answ.result[0].message.chat.id == 80387796) {
+                answ_text = answ.result[0].message.text;
+                // вывести результат
+                document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-primary badge-pill">От папы <span class="badge badge-light badge-pill">' + dt + '</span> <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + answ_text + '</span></p>';
+
+              }
+            } else {
+              console.error(xhr.statusText);
+              alert(xhr.status + ': ' + xhr.statusText); // пример вывода: 404: Not Found
+            }
+          }
+        };
+        xhr.onerror = (e) => {
+          console.error(xhr.statusText);
+        };
+        xhr.send(null);
+      }
+
+      function incMessage_old() {
         // 1. Создаём новый объект XMLHttpRequest
         var xhr = new XMLHttpRequest();
 
