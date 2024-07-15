@@ -189,8 +189,8 @@ Your browser does not support the audio element.
     </div>
   </center>
     <script>
-      answ_text = '';
-
+      var answ_text = '';
+      var receive_messages_flag = 0;
 
       function incMessage() {
         const xhr = new XMLHttpRequest();
@@ -198,7 +198,7 @@ Your browser does not support the audio element.
         xhr.onload = (e) => {
           if (xhr.readyState === 4) {
             if (xhr.status === 200) {
-              console.log(xhr.responseText);
+              //console.log(xhr.responseText);
               answ = JSON.parse(xhr.responseText);
               let unix_ts = new Date(answ.result[0].message.date * 1000);
               var months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -291,7 +291,12 @@ Your browser does not support the audio element.
         
         document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-success badge-pill"> Отправлено <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + message + '</span></p>';
         document.getElementById('sendText').value = '';
-        let timerId = setInterval(() => incMessage(), 3000);
+        document.console.log('receive_messages_flag='+receive_messages_flag);
+        if (receive_messages_flag == 0) {
+          receive_messages_flag = 1;
+          let timerId = setInterval(() => incMessage(), 3000);
+        }
+        
 
         // // 4. Если код ответа сервера не 200, то это ошибка
         // if (xhr.status != 200) {
