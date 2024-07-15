@@ -208,8 +208,6 @@ Your browser does not support the audio element.
               let hour = unix_ts.getHours();
               let min = unix_ts.getMinutes();
               let dt = date + ' ' + month + ' ' + year + 'г. в ' + hour + ':' + min;
-              //let answ = JSON.parse('{"ok":true,"result":[{"update_id":678097307,"message":{"message_id":18,"from":{"id":80387796,"is_bot":false,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","language_code":"ru"},"chat":{"id":80387796,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","type":"private"},"date":1611321522,"text":"456"}}]}');
-              //  console.log(answ); -1001335708139 papaivanya
               if (answ_text != answ.result[0].message.text && answ.result[0].message.chat.id == 80387796) {
                 answ_text = answ.result[0].message.text;
                 // вывести результат
@@ -228,92 +226,23 @@ Your browser does not support the audio element.
         xhr.send(null);
       }
 
-      function incMessage_old() {
-        // 1. Создаём новый объект XMLHttpRequest
-        var xhr = new XMLHttpRequest();
-
-        // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
-        xhr.open('GET', 'https://script.google.com/macros/s/AKfycbyG6lg8sqQuHwPCgb8kZ6lm9TpKDGL5_m1-_6xqNcCLz36e9wc5w9m3jeoLPvWC2q-ToA/exec', false);
-
-        // 3. Отсылаем запрос
-        xhr.send();
-
-        // 4. Если код ответа сервера не 200, то это ошибка
-        if (xhr.status != 200) {
-          // обработать ошибку
-          alert(xhr.status + ': ' + xhr.statusText); // пример вывода: 404: Not Found
-        } else {
-          answ = JSON.parse(xhr.responseText);
-          let unix_ts = new Date(answ.result[0].message.date * 1000);
-          var months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-          let year = unix_ts.getFullYear();
-          let month = months[unix_ts.getMonth()];;
-          let date = unix_ts.getDate();
-          let hour = unix_ts.getHours();
-          let min = unix_ts.getMinutes();
-          let dt = date + ' ' + month + ' ' + year + 'г. в ' + hour + ':' + min;
-          //let answ = JSON.parse('{"ok":true,"result":[{"update_id":678097307,"message":{"message_id":18,"from":{"id":80387796,"is_bot":false,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","language_code":"ru"},"chat":{"id":80387796,"first_name":"\u0410\u043b\u0435\u043a\u0441\u0435\u0439","username":"allexvip","type":"private"},"date":1611321522,"text":"456"}}]}');
-          //  console.log(answ); -1001335708139 papaivanya
-          if (answ_text != answ.result[0].message.text && answ.result[0].message.chat.id == 80387796) {
-            answ_text = answ.result[0].message.text;
-            // вывести результат
-            document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-primary badge-pill">От папы <span class="badge badge-light badge-pill">' + dt + '</span> <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + answ_text + '</span></p>';
-
-          }
-          //document.getElementById('sendText').value='';
-          //alert( xhr.responseText ); // responseText -- текст ответа.
-        }
-      }
-
-      // function sendMessage(text) {
-      //   let message = document.getElementById('sendText').value;
-      //   let geo_link = document.getElementById('geo_link').innerText;
-      //   let s_url = 'https://script.google.com/macros/s/AKfycbzuVeRrQMmLsOnnvWEdU9fKkEcRs0WQOJiVlqhfkKh1mE4UFaL42aBMUnZQgBBrRNgM/exec';
-      //   fetch(s_url + '?text=' + message).then((response) => response.json()).then((json) => console.log(json));
-      //   fetch(s_url + '?text=https://yandex.ru/maps/?text=' + geo_link).then((response) => response.json()).then((json) => console.log(json));
-      // }    
-
 
       function sendMessage() {
-        // 1. Создаём новый объект XMLHttpRequest
         var xhr = new XMLHttpRequest();
-
-        // 2. Конфигурируем его: GET-запрос на URL 'phones.json'
         let message = document.getElementById('sendText').value;
         let geo_link = document.getElementById('geo_link').innerText;
         let s_url = 'https://script.google.com/macros/s/AKfycbzuVeRrQMmLsOnnvWEdU9fKkEcRs0WQOJiVlqhfkKh1mE4UFaL42aBMUnZQgBBrRNgM/exec';
-        // xhr.open('GET', s_url + '?text=' + message, false);
-        // xhr.send();
-        // xhr.open('GET', s_url + '?text=https://yandex.ru/maps/?text=' + geo_link, false);
-        // xhr.send();
         fetch(s_url + '?text=' + message).then((response) => response.json()).then((json) => console.log(json));
         fetch(s_url + '?text=' + geo_link).then((response) => response.json()).then((json) => console.log(json));
-        
         document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-success badge-pill"> Отправлено <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + message + '</span></p>';
         document.getElementById('sendText').value = '';
         console.log('receive_messages_flag='+receive_messages_flag);
         if (receive_messages_flag == 0) {
+          console.log('receive_messages_flag='+receive_messages_flag+' -> 1');
           receive_messages_flag = 1;
           let timerId = setInterval(() => incMessage(), 3000);
         }
         
-
-        // // 4. Если код ответа сервера не 200, то это ошибка
-        // if (xhr.status != 200) {
-        //   // обработать ошибку
-        //   alert(xhr.status + ': ' + xhr.statusText); // пример вывода: 404: Not Found
-        // } else {
-        //   // вывести результат
-        //   document.getElementById('sendResult').innerHTML += '<p><span class="badge badge-success badge-pill"> Отправлено <span class="badge badge-light badge-pill"><i class="fas fa-check"></i></span></span> <span class="badge badge-light badge-pill">' + message + '</span></p>';
-        //   document.getElementById('sendText').value = '';
-
-        //   //слушаем ответ
-        //   // повторить с интервалом 3 секунды
-        //   let timerId = setInterval(() => incMessage(), 3000);
-
-
-        //   //alert( xhr.responseText ); // responseText -- текст ответа.
-        // }
       }
 
       function autocall() {
