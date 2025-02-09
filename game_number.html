@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Угадай число - Компьютер vs Человек</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .game-container {
+            border: 2px solid #333;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f0f0f0;
+        }
+        .buttons {
+            margin: 15px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #message {
+            color: #d32f2f;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Загадайте число от 1 до 100!</h1>
+        <p>Моё предположение: <span id="guess">50</span></p>
+        <p>Попыток: <span id="attempts">0</span></p>
+        <div class="buttons">
+            <button onclick="handleResponse('less')">Меньше!</button>
+            <button onclick="handleResponse('correct')">Угадал!</button>
+            <button onclick="handleResponse('more')">Больше!</button>
+        </div>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        let min = 1;
+        let max = 100;
+        let attempts = 0;
+        let currentGuess;
+
+        function initializeGame() {
+            min = 1;
+            max = 100;
+            attempts = 0;
+            currentGuess = 50;
+            updateDisplay();
+            document.getElementById('message').textContent = '';
+        }
+
+        function calculateGuess() {
+            return Math.floor((min + max) / 2);
+        }
+
+        function updateDisplay() {
+            document.getElementById('guess').textContent = currentGuess;
+            document.getElementById('attempts').textContent = attempts;
+        }
+
+        function handleResponse(response) {
+            attempts++;
+            
+            if (response === 'correct') {
+                document.getElementById('message').textContent = 
+                    `Ура! Я угадал за ${attempts} попыток!`;
+                initializeGame();
+                return;
+            }
+
+            if (response === 'more') {
+                min = currentGuess + 1;
+            } else if (response === 'less') {
+                max = currentGuess - 1;
+            }
+
+            if (min > max) {
+                document.getElementById('message').textContent = 
+                    'Кажется, вы где-то соврали! Давайте начнём заново.';
+                initializeGame();
+                return;
+            }
+
+            currentGuess = calculateGuess();
+            
+            if (min === max) {
+                currentGuess = min;
+            }
+
+            updateDisplay();
+        }
+
+        // Начало игры при загрузке страницы
+        initializeGame();
+    </script>
+</body>
+</html>
