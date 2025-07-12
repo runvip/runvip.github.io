@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Танчики Telegram Mini App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>Танчики</h1>
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
+        <div class="controls">
+            <p>Используйте стрелки для движения и пробел для стрельбы.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
