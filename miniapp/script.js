@@ -314,11 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 togglePause(); // Снимаем паузу после сохранения
             } else if (e.code === 'KeyL') { // L для загрузки
                 loadGame();
-                togglePause(); // Снимаем паузу после загрузки
+                // ! НЕТ togglePause() ЗДЕСЬ ! loadGame() уже снимает паузу и запускает gameLoop
+                // togglePause(); // УДАЛИТЬ ЭТУ СТРОКУ, если она была!
             } else if (e.code === 'KeyN') { // N для новой игры
                 if (confirm('Начать новую игру? Прогресс будет потерян.')) {
                     resetGame();
-                    togglePause(); // Снимаем паузу после начала новой игры
+                    // ! НЕТ togglePause() ЗДЕСЬ ! resetGame() уже снимает паузу и запускает gameLoop
+                    // togglePause(); // УДАЛИТЬ ЭТУ СТРОКУ!
                 }
             }
         }
