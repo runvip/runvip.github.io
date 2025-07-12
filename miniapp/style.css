@@ -1,7 +1,8 @@
+/* style.css */
+
 body {
     margin: 0;
     overflow: hidden;
-    /* Предотвращает появление скроллбаров */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -11,46 +12,99 @@ body {
 }
 
 #gameContainer {
+    position: relative;
+    /* Добавлено для позиционирования кнопки меню */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    /* background-color: #333; /* Для отладки, можно убрать */
-    /* Максимальная ширина, чтобы игра не была слишком огромной на очень больших экранах */
     max-width: 100vh * (4/3);
-    /* Если высота экрана большая, ограничиваем по пропорциям 4:3 */
     max-height: 95vh;
-    /* Ограничиваем по высоте экрана */
     width: 95vw;
-    /* Занимаем 95% ширины экрана */
     height: auto;
-    /* Высота будет подстраиваться под пропорции */
     aspect-ratio: 4 / 3;
-    /* Сохраняем пропорции 4:3 */
+    padding-top: 50px;
+    /* Добавим отступ сверху для кнопки меню */
+    padding-bottom: 20px;
+    /* Отступ снизу для кнопок управления, если они есть */
+    box-sizing: border-box;
+    /* Важно: чтобы padding не увеличивал общий размер */
 }
 
 #gameCanvas {
     display: block;
-    /* Убираем лишние отступы */
     width: 100%;
-    /* Канвас займет всю доступную ширину контейнера */
     height: 100%;
-    /* Канвас займет всю доступную высоту контейнера */
     background-color: black;
     border: 2px solid white;
     box-sizing: border-box;
-    /* Важно, чтобы border не выходил за рамки 100% */
 }
 
+/* Стили для новой кнопки "Меню" */
+#btnMenu {
+    position: absolute;
+    /* Позиционируем относительно gameContainer */
+    top: 10px;
+    /* Небольшой отступ сверху */
+    right: 10px;
+    /* Небольшой отступ справа */
+    padding: 10px 15px;
+    font-size: 1em;
+    background-color: #007bff;
+    /* Синий цвет для меню */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1000;
+    /* Убедимся, что кнопка поверх всего */
+}
+
+/* Скрываем кнопку "Меню" на десктопах по умолчанию */
+#btnMenu {
+    display: none;
+}
+
+/* Показываем кнопку "Меню" только на маленьких экранах */
+@media (max-width: 767px) {
+    #controls {
+        display: none;
+        /* Скрываем старые кнопки управления на мобильных */
+    }
+
+    #btnMenu {
+        display: block;
+        /* Показываем кнопку "Меню" на мобильных */
+    }
+
+    /* Уменьшим padding-top для gameContainer, если кнопки управления спрятаны */
+    #gameContainer {
+        padding-bottom: 0;
+    }
+}
+
+/* Медиа-запросы для ориентации остаются без изменений */
+@media (orientation: landscape) {
+    #gameContainer {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+}
+
+@media (orientation: portrait) {
+    #gameContainer {
+        max-width: 95vw;
+        max-height: 95vh;
+    }
+}
+
+/* Стили для кнопок управления (если они остались) */
 #controls {
     display: flex;
     flex-wrap: wrap;
-    /* Для кнопок на мобильных */
     justify-content: center;
     gap: 10px;
-    /* Отступы между кнопками */
     margin-top: 15px;
-    /* Отступ от канваса */
 }
 
 #controls button {
@@ -63,30 +117,9 @@ body {
     cursor: pointer;
     transition: background-color 0.2s;
     flex-grow: 1;
-    /* Чтобы кнопки занимали доступное место */
     min-width: 80px;
-    /* Минимальная ширина кнопок */
 }
 
 #controls button:active {
     background-color: #777;
-}
-
-/* Медиа-запрос для экранов, где ширина больше высоты (например, настольные ПК) */
-@media (orientation: landscape) {
-    #gameContainer {
-        max-width: 95vw;
-        max-height: 95vh;
-        /* Это позволит контейнеру занять максимум пространства,
-           сохраняя 4:3 пропорции и не выходя за рамки экрана */
-    }
-}
-
-/* Медиа-запрос для экранов, где высота больше ширины (например, мобильные в портретном режиме) */
-@media (orientation: portrait) {
-    #gameContainer {
-        max-width: 95vw;
-        max-height: 95vh;
-        /* Здесь ширина будет ограничивающим фактором */
-    }
 }

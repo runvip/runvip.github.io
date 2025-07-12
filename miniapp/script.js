@@ -18,16 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const widthRatio = containerWidth / ORIGINAL_GAME_WIDTH;
         const heightRatio = containerHeight / ORIGINAL_GAME_HEIGHT;
 
+        // Выбираем меньший коэффициент, чтобы игра полностью вписалась и сохранила пропорции 4:3
         scaleFactor = Math.min(widthRatio, heightRatio);
 
-        // Устанавливаем внутренние размеры канваса
+        // Устанавливаем внутренние размеры канваса на логические.
+        // CSS позаботится о внешнем масштабировании элемента canvas.
         canvas.width = ORIGINAL_GAME_WIDTH;
         canvas.height = ORIGINAL_GAME_HEIGHT;
 
-        // Применяем масштабирование к контексту отрисовки
+        // Применяем масштабирование к контексту отрисовки.
         // Важно: это сбрасывается каждый раз при очистке (clearRect)
-        // Поэтому нужно применять его в gameLoop перед каждой отрисовкой.
-        // Здесь мы просто устанавливаем его изначально.
+        // Поэтому нужно применять его в gameLoop перед каждой отрисовкой игровых объектов.
+        // Здесь мы просто устанавливаем его изначально для общих целей.
         ctx.setTransform(scaleFactor, 0, 0, scaleFactor, 0, 0);
 
         console.log(`Canvas resized. Container: ${containerWidth}x${containerHeight}. Scale factor: ${scaleFactor}`);
@@ -388,6 +390,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let touchMoveActive = false; // Флаг, что сейчас идет свайп, а не тап
     let currentTouchDirection = null; // 'up', 'down', 'left', 'right' или null
 
+    // Получаем новую кнопку "Меню"
+    const btnMenu = document.getElementById('btnMenu');
+
+    // Обработчик для кнопки "Меню"
+    if (btnMenu) { // Проверяем, существует ли кнопка (она может быть скрыта CSS)
+        btnMenu.addEventListener('click', (e) => {
+            e.preventDefault(); // Предотвращаем дефолтное поведение
+            togglePause(); // Вызываем функцию паузы
+        });
+    }
+
     document.addEventListener('keydown', (e) => {
         keys[e.code] = true;
         if (e.code === 'KeyP') {
@@ -397,7 +410,8 @@ document.addEventListener('DOMContentLoaded', () => {
             goToNextLevel();
         }
         // Обработчики для клавиш сохранения/загрузки/новой игры, когда игра на паузе
-        if (isPaused) { // Эти действия должны быть доступны только в режиме паузы
+        // Эти действия теперь также доступны через интерактивное меню паузы
+        if (isPaused) {
             if (e.code === 'KeyS') { // S для сохранения
                 saveGame();
                 togglePause(); // Снимаем паузу после сохранения
@@ -417,6 +431,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Обработчики сенсорного управления на канвасе
     canvas.addEventListener('touchstart', (e) => {
+        // Проверяем, не на паузе ли игра, чтобы тач не повлиял на движение во время меню
+        if (isPaused) return;
+
         e.preventDefault(); // Предотвращаем прокрутку страницы
         if (e.touches.length === 1) { // Обрабатываем только одно касание
             touchStartX = e.touches[0].clientX;
@@ -427,6 +444,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     canvas.addEventListener('touchmove', (e) => {
+        if (isPaused) return; // Не обрабатываем движение во время паузы
+
         e.preventDefault();
         if (e.touches.length === 1) {
             const touchX = e.touches[0].clientX;
@@ -458,6 +477,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     canvas.addEventListener('touchend', (e) => {
+        if (isPaused) return; // Не обрабатываем стрельбу/движение во время паузы
+
         e.preventDefault();
         // Если это не был активный свайп (т.е., это был короткий тап)
         if (!touchMoveActive) {
@@ -470,6 +491,10 @@ document.addEventListener('DOMContentLoaded', () => {
         player.dx = 0;
         player.dy = 0;
     });
+
+    // Обработчики для интерактивного меню паузы
+    canvas.addEventListener('click', handleMenuClick);
+    canvas.addEventListener('touchend', handleMenuClick); // Используем touchend для мобильных
 
 
     function handlePlayerMovement() {
@@ -689,6 +714,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let animationFrameId = null; // Инициализируем null
     let gameLoopRunning = false; // Флаг, чтобы gameLoop запускался только один раз
 
+    // Глобальные переменные для меню паузы
+    const pauseMenuButtons = []; // Будет хранить объекты кнопок
+    const BUTTON_WIDTH = 250;
+    const BUTTON_HEIGHT = 40;
+    const BUTTON_SPACING = 15; // Отступ между кнопками
+
     function togglePause() {
         isPaused = !isPaused;
         if (isPaused) {
@@ -699,26 +730,102 @@ document.addEventListener('DOMContentLoaded', () => {
             gameLoopRunning = false; // Флаг: цикл остановлен
 
             // При паузе нужно сбросить трансформацию для текста меню паузы
-            ctx.setTransform(1, 0, 0, 1, 0, 0); // Сброс масштаба для текста меню
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            // Рисуем меню в реальных пикселях канваса, не масштабируя его
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Более темный фон для меню
             // Заполняем ВЕСЬ канвас (его видимые размеры)
             ctx.fillRect(0, 0, canvas.width * scaleFactor, canvas.height * scaleFactor);
+
             ctx.fillStyle = 'white';
             ctx.font = '30px Arial';
             ctx.textAlign = 'center';
-            // Координаты меню паузы должны быть по центру видимой части канваса
-            ctx.fillText('ПАУЗА', (canvas.width * scaleFactor) / 2, (canvas.height * scaleFactor) / 2 - 40);
-            ctx.font = '20px Arial';
-            ctx.fillText('Нажмите P, чтобы продолжить', (canvas.width * scaleFactor) / 2, (canvas.height * scaleFactor) / 2);
-            ctx.fillText('Нажмите S, чтобы сохранить', (canvas.width * scaleFactor) / 2, (canvas.height * scaleFactor) / 2 + 30);
-            ctx.fillText('Нажмите L, чтобы загрузить', (canvas.width * scaleFactor) / 2, (canvas.height * scaleFactor) / 2 + 60);
-            ctx.fillText('Нажмите N, чтобы начать новую игру', (canvas.width * scaleFactor) / 2, (canvas.height * scaleFactor) / 2 + 90);
-            ctx.textAlign = 'left';
+
+            const menuCenterX = (canvas.width * scaleFactor) / 2;
+            let currentButtonY = (canvas.height * scaleFactor) / 2 - (BUTTON_HEIGHT * 2 + BUTTON_SPACING * 1.5); // Начальная Y для первой кнопки
+
+            // Отрисовка заголовка "ПАУЗА"
+            ctx.fillText('ПАУЗА', menuCenterX, currentButtonY - BUTTON_HEIGHT / 2 - 20); // Смещаем заголовок выше кнопок
+
+            // Очищаем предыдущие кнопки
+            pauseMenuButtons.length = 0;
+
+            // Определяем кнопки меню
+            const menuOptions = [
+                { text: 'Продолжить', action: () => togglePause() },
+                { text: 'Сохранить игру', action: () => { saveGame(); togglePause(); } }, // Сохраняем и сразу снимаем паузу
+                { text: 'Загрузить игру', action: () => { loadGame(); } },
+                { text: 'Новая игра', action: () => { if (confirm('Начать новую игру? Прогресс будет потерян.')) { resetGame(); } } }
+            ];
+
+            // Отрисовываем кнопки и сохраняем их координаты
+            ctx.font = '24px Arial'; // Шрифт для кнопок
+            menuOptions.forEach((option, index) => {
+                const buttonX = menuCenterX - BUTTON_WIDTH / 2;
+                const buttonY = currentButtonY + index * (BUTTON_HEIGHT + BUTTON_SPACING);
+
+                ctx.fillStyle = '#333'; // Цвет фона кнопки
+                ctx.fillRect(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT);
+
+                ctx.strokeStyle = '#555'; // Обводка кнопки
+                ctx.lineWidth = 2;
+                ctx.strokeRect(buttonX, buttonY, BUTTON_WIDTH, BUTTON_HEIGHT);
+
+                ctx.fillStyle = 'white'; // Цвет текста кнопки
+                // Центрируем текст по высоте кнопки
+                ctx.fillText(option.text, menuCenterX, buttonY + BUTTON_HEIGHT / 2 + 8); // 8 - небольшая коррекция для вертикального центрирования текста
+
+                // Добавляем кнопку в массив для обработки кликов/тапов
+                pauseMenuButtons.push({
+                    x: buttonX,
+                    y: buttonY,
+                    width: BUTTON_WIDTH,
+                    height: BUTTON_HEIGHT,
+                    action: option.action
+                });
+            });
+
+            ctx.textAlign = 'left'; // Возвращаем выравнивание текста по умолчанию
         } else {
             // Если игра не на паузе и цикл не запущен, запускаем его
             if (!gameLoopRunning) {
                 lastTime = performance.now(); // Сброс lastTime для корректного deltaTime
                 gameLoop(lastTime);
+            }
+            pauseMenuButtons.length = 0; // Очищаем кнопки при выходе из паузы
+        }
+    }
+
+    // Функция для обработки кликов/тапов по кнопкам меню паузы
+    function handleMenuClick(e) {
+        if (!isPaused) return; // Обрабатываем клики по меню только когда игра на паузе
+
+        e.preventDefault(); // Предотвращаем любые другие действия
+
+        const rect = canvas.getBoundingClientRect(); // Размеры канваса на экране
+        let clientX, clientY;
+
+        if (e.type === 'touchend') {
+            // Если это touchend, используем координаты последнего касания
+            // Важно: touches может быть пустым на touchend, используем changedTouches
+            if (e.changedTouches.length === 0) return;
+            clientX = e.changedTouches[0].clientX;
+            clientY = e.changedTouches[0].clientY;
+        } else { // Это 'click' событие
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+
+        // Преобразуем координаты клика/тапа в координаты относительно отрисованного канваса
+        // Учитываем scaleFactor, так как кнопки нарисованы в реальных пикселях канваса (после ctx.setTransform(1,...))
+        const mouseX = (clientX - rect.left);
+        const mouseY = (clientY - rect.top);
+
+        // Проверяем каждую кнопку меню
+        for (const button of pauseMenuButtons) {
+            if (mouseX >= button.x && mouseX <= button.x + button.width &&
+                mouseY >= button.y && mouseY <= button.y + button.height) {
+                button.action(); // Выполняем действие кнопки
+                break; // Выходим после первого срабатывания
             }
         }
     }
@@ -832,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (enemy !== otherEnemy && checkCollision(enemy, otherEnemy)) {
                     // Отталкиваем врагов друг от друга
                     enemy.x -= enemy.dx;
-                    enemy.y -= enemy.y; // Ошибка была здесь (enemy.y вместо enemy.dy)
+                    enemy.y -= enemy.dy; // Исправлено: enemy.dy
                     otherEnemy.x -= otherEnemy.dx;
                     otherEnemy.y -= otherEnemy.dy;
                     // И меняем их направления
