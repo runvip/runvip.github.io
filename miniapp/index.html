@@ -1,36 +1,24 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Танчики Telegram Mini App</title>
+    <title>Танчики</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <div class="game-container">
-        <h1>Танчики</h1>
+    <div id="gameContainer">
         <canvas id="gameCanvas" width="640" height="480"></canvas>
-        <div class="controls">
-            <p>Используйте стрелки / WASD для движения и пробел для стрельбы.</p>
-        </div>
-
-        <div class="touch-controls">
-            <div class="direction-pad">
-                <div class="control-button" id="btnUp">⬆️</div>
-                <div class="row">
-                    <div class="control-button" id="btnLeft">⬅️</div>
-                    <div class="control-button" id="btnDown">⬇️</div>
-                    <div class="control-button" id="btnRight">➡️</div>
-                </div>
-            </div>
-            <div class="action-buttons">
-                <div class="control-button action-button" id="btnFire">💥</div>
-            </div>
+        <div id="controls">
+            <button id="btnUp">↑</button>
+            <button id="btnLeft">←</button>
+            <button id="btnRight">→</button>
+            <button id="btnDown">↓</button>
+            <button id="btnFire">FIRE</button>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 
