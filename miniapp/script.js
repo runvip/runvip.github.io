@@ -19,8 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
         direction: 0, // 0:вверх, 1:вправо, 2:вниз, 3:влево
         canShoot: true,
         fireCooldown: 300,
-        lives: 3, // Добавляем жизни игрока
-        score: 0, // Добавляем очки игрока
+        lives: 3,
+        score: 0,
+        initialPlayerPosition: { x: CANVAS_WIDTH / 2 - 20, y: CANVAS_HEIGHT - 60 },
+        isAlive: true,
 
         draw: function () {
             ctx.fillStyle = this.color;
@@ -43,19 +45,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         update: function () {
+            if (!this.isAlive) return;
+
             const prevX = this.x;
             const prevY = this.y;
 
             this.x += this.dx;
             this.y += this.dy;
 
-            // Ограничиваем движение танка пределами канваса
             if (this.x < 0) this.x = 0;
             if (this.x + this.width > CANVAS_WIDTH) this.x = CANVAS_WIDTH - this.width;
             if (this.y < 0) this.y = 0;
             if (this.y + this.height > CANVAS_HEIGHT) this.y = CANVAS_HEIGHT - this.height;
 
-            // Проверка коллизий с стенами после движения
             for (const wall of walls) {
                 if (checkCollision(this, wall)) {
                     this.x = prevX;
@@ -65,31 +67,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         shoot: function () {
-            if (this.canShoot) {
+            if (this.canShoot && this.isAlive) {
                 let bulletX, bulletY, bulletDx, bulletDy;
                 const bulletSize = 6;
                 const bulletSpeed = 7;
 
                 switch (this.direction) {
-                    case 0: // Вверх
+                    case 0:
                         bulletX = this.x + this.width / 2 - bulletSize / 2;
                         bulletY = this.y - bulletSize;
                         bulletDx = 0;
                         bulletDy = -bulletSpeed;
                         break;
-                    case 1: // Вправо
+                    case 1:
                         bulletX = this.x + this.width;
                         bulletY = this.y + this.height / 2 - bulletSize / 2;
                         bulletDx = bulletSpeed;
                         bulletDy = 0;
                         break;
-                    case 2: // Вниз
+                    case 2:
                         bulletX = this.x + this.width / 2 - bulletSize / 2;
                         bulletY = this.y + this.height;
                         bulletDx = 0;
                         bulletDy = bulletSpeed;
                         break;
-                    case 3: // Влево
+                    case 3:
                         bulletX = this.x - bulletSize;
                         bulletY = this.y + this.height / 2 - bulletSize / 2;
                         bulletDx = -bulletSpeed;
@@ -105,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     dx: bulletDx,
                     dy: bulletDy,
                     color: 'red',
-                    isPlayerBullet: true, // Флаг, чтобы отличать пули игрока
+                    isPlayerBullet: true,
                     draw: function () {
                         ctx.fillStyle = this.color;
                         ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -129,41 +131,72 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const bullets = [];
+    const enemies = [];
+    let enemiesDestroyed = 0;
 
-    const walls = [
-        { x: 100, y: 100, width: 80, height: 20, color: 'brown', indestructible: false },
-        { x: 200, y: 100, width: 20, height: 80, color: 'brown', indestructible: false },
-        { x: 400, y: 200, width: 100, height: 20, color: 'gray', indestructible: true },
-        { x: 50, y: 250, width: 20, height: 50, color: 'brown', indestructible: false },
-        { x: 500, y: 300, width: 50, height: 50, color: 'brown', indestructible: false }
+    // --- Определение уровней ---
+    const levels = [
+        {
+            level: 1,
+            maxEnemies: 3,
+            initialWalls: [
+                { x: 100, y: 100, width: 80, height: 20, color: 'brown', indestructible: false },
+                { x: 200, y: 100, width: 20, height: 80, color: 'brown', indestructible: false },
+                { x: 400, y: 200, width: 100, height: 20, color: 'gray', indestructible: true },
+                { x: 50, y: 250, width: 20, height: 50, color: 'brown', indestructible: false },
+                { x: 500, y: 300, width: 50, height: 50, color: 'brown', indestructible: false },
+            ]
+        },
+        {
+            level: 2,
+            maxEnemies: 5,
+            initialWalls: [
+                { x: 150, y: 50, width: 20, height: 150, color: 'brown', indestructible: false },
+                { x: 150, y: 300, width: 20, height: 150, color: 'brown', indestructible: false },
+                { x: 300, y: 150, width: 200, height: 20, color: 'gray', indestructible: true },
+                { x: 300, y: 350, width: 200, height: 20, color: 'gray', indestructible: true },
+                { x: 400, y: 50, width: 20, height: 50, color: 'brown', indestructible: false },
+                { x: 400, y: 400, width: 20, height: 50, color: 'brown', indestructible: false },
+            ]
+        },
+        {
+            level: 3,
+            maxEnemies: 7,
+            initialWalls: [
+                { x: 50, y: 50, width: 540, height: 20, color: 'gray', indestructible: true },
+                { x: 50, y: 410, width: 540, height: 20, color: 'gray', indestructible: true },
+                { x: 50, y: 70, width: 20, height: 340, color: 'gray', indestructible: true },
+                { x: 570, y: 70, width: 20, height: 340, color: 'gray', indestructible: true },
+                { x: 200, y: 150, width: 240, height: 20, color: 'brown', indestructible: false },
+                { x: 200, y: 300, width: 240, height: 20, color: 'brown', indestructible: false },
+            ]
+        }
     ];
 
-    // --- Вражеские танки ---
-    const enemies = [];
-    const maxEnemies = 3; // Максимальное количество врагов на поле одновременно
-    let enemiesDestroyed = 0; // Счетчик уничтоженных врагов
+    let currentLevelIndex = 0;
+    let walls = []; // Инициализируется в initLevel
 
-    // Функция для создания нового вражеского танка
+    // --- Вражеские танки ---
     function createEnemy() {
         const enemy = {
-            x: Math.random() * (CANVAS_WIDTH - 40), // Случайная позиция
-            y: Math.random() * (CANVAS_HEIGHT / 2 - 40), // В верхней половине экрана
+            x: Math.random() * (CANVAS_WIDTH - 40),
+            y: Math.random() * (CANVAS_HEIGHT / 2 - 40),
             width: 40,
             height: 40,
             color: 'green',
             speed: 1.5,
             dx: 0,
             dy: 0,
-            direction: Math.floor(Math.random() * 4), // Случайное начальное направление
+            direction: Math.floor(Math.random() * 4),
             canShoot: true,
-            fireCooldown: 1000 + Math.random() * 1000, // Случайная задержка стрельбы 1-2 секунды
-            moveTimer: 0, // Таймер для изменения направления движения
-            moveInterval: 1000 + Math.random() * 2000, // Интервал изменения направления 1-3 секунды
+            fireCooldown: 1000 + Math.random() * 1000,
+            moveTimer: 0,
+            moveInterval: 1000 + Math.random() * 2000,
 
             draw: function () {
                 ctx.fillStyle = this.color;
                 ctx.fillRect(this.x, this.y, this.width, this.height);
-                ctx.fillStyle = 'darkgreen'; // Пушка
+                ctx.fillStyle = 'darkgreen';
                 switch (this.direction) {
                     case 0: ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 15); break;
                     case 1: ctx.fillRect(this.x + this.width, this.y + this.height / 2 - 5, 15, 10); break;
@@ -175,40 +208,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 const prevX = this.x;
                 const prevY = this.y;
 
-                // Обновление таймера движения и изменение направления
                 this.moveTimer += deltaTime;
                 if (this.moveTimer >= this.moveInterval) {
-                    this.direction = Math.floor(Math.random() * 4); // Случайное новое направление
+                    this.direction = Math.floor(Math.random() * 4);
                     this.moveTimer = 0;
-                    this.moveInterval = 1000 + Math.random() * 2000; // Новый интервал
+                    this.moveInterval = 1000 + Math.random() * 2000;
                 }
 
-                // Установка dx/dy в зависимости от направления
                 this.dx = 0;
                 this.dy = 0;
                 switch (this.direction) {
-                    case 0: this.dy = -this.speed; break; // Вверх
-                    case 1: this.dx = this.speed; break;  // Вправо
-                    case 2: this.dy = this.speed; break;  // Вниз
-                    case 3: this.dx = -this.speed; break; // Влево
+                    case 0: this.dy = -this.speed; break;
+                    case 1: this.dx = this.speed; break;
+                    case 2: this.dy = this.speed; break;
+                    case 3: this.dx = -this.speed; break;
                 }
 
                 this.x += this.dx;
                 this.y += this.dy;
 
-                // Ограничиваем движение пределами канваса
-                if (this.x < 0) { this.x = 0; this.direction = Math.floor(Math.random() * 4); } // Отскок
+                if (this.x < 0) { this.x = 0; this.direction = Math.floor(Math.random() * 4); }
                 if (this.x + this.width > CANVAS_WIDTH) { this.x = CANVAS_WIDTH - this.width; this.direction = Math.floor(Math.random() * 4); }
                 if (this.y < 0) { this.y = 0; this.direction = Math.floor(Math.random() * 4); }
                 if (this.y + this.height > CANVAS_HEIGHT) { this.y = CANVAS_HEIGHT - this.height; this.direction = Math.floor(Math.random() * 4); }
 
 
-                // Проверка коллизий с стенами (враги тоже не проходят сквозь стены)
                 for (const wall of walls) {
                     if (checkCollision(this, wall)) {
                         this.x = prevX;
                         this.y = prevY;
-                        this.direction = Math.floor(Math.random() * 4); // Меняем направление при столкновении
+                        this.direction = Math.floor(Math.random() * 4);
                         break;
                     }
                 }
@@ -217,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (this.canShoot) {
                     let bulletX, bulletY, bulletDx, bulletDy;
                     const bulletSize = 6;
-                    const bulletSpeed = 5; // Скорость пули врага
+                    const bulletSpeed = 5;
 
                     switch (this.direction) {
                         case 0: bulletX = this.x + this.width / 2 - bulletSize / 2; bulletY = this.y - bulletSize; bulletDx = 0; bulletDy = -bulletSpeed; break;
@@ -233,8 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         height: bulletSize,
                         dx: bulletDx,
                         dy: bulletDy,
-                        color: 'orange', // Пули врагов другого цвета
-                        isPlayerBullet: false, // Флаг, чтобы отличать пули врагов
+                        color: 'orange',
+                        isPlayerBullet: false,
                         draw: function () {
                             ctx.fillStyle = this.color;
                             ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -267,11 +296,32 @@ document.addEventListener('DOMContentLoaded', () => {
             rect1.y + rect1.height > rect2.y;
     }
 
-    // --- Управление (без изменений) ---
+    // --- Управление ---
     const keys = {};
 
     document.addEventListener('keydown', (e) => {
         keys[e.code] = true;
+        if (e.code === 'KeyP') {
+            togglePause();
+        }
+        if (e.code === 'KeyU' && !isPaused) {
+            goToNextLevel();
+        }
+        // Обработчики для клавиш сохранения/загрузки/новой игры, когда игра на паузе
+        if (isPaused) { // Эти действия должны быть доступны только в режиме паузы
+            if (e.code === 'KeyS') { // S для сохранения
+                saveGame();
+                togglePause(); // Снимаем паузу после сохранения
+            } else if (e.code === 'KeyL') { // L для загрузки
+                loadGame();
+                togglePause(); // Снимаем паузу после загрузки
+            } else if (e.code === 'KeyN') { // N для новой игры
+                if (confirm('Начать новую игру? Прогресс будет потерян.')) {
+                    resetGame();
+                    togglePause(); // Снимаем паузу после начала новой игры
+                }
+            }
+        }
     });
 
     document.addEventListener('keyup', (e) => {
@@ -337,35 +387,204 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawHUD() {
         ctx.fillStyle = 'white';
         ctx.font = '16px Arial';
-        ctx.fillText(`Жизни: ${player.lives}`, 10, 20); // Отображаем жизни
-        ctx.fillText(`Счет: ${player.score}`, 10, 40); // Отображаем счет
-        ctx.fillText(`Врагов уничтожено: ${enemiesDestroyed}`, 10, 60); // Отображаем уничтоженных врагов
+        ctx.fillText(`Жизни: ${player.lives}`, 10, 20);
+        ctx.fillText(`Счет: ${player.score}`, 10, 40);
+        ctx.fillText(`Уровень: ${levels[currentLevelIndex].level}`, 10, 60);
+        ctx.fillText(`Врагов уничтожено на уровне: ${enemiesDestroyed} / ${levels[currentLevelIndex].maxEnemies}`, 10, 80);
     }
 
-    // --- Игровой цикл ---
-    let lastTime = 0; // Для расчета deltaTime
+    // --- Функции сохранения/загрузки ---
+    function saveGame() {
+        const gameData = {
+            player: {
+                lives: player.lives,
+                score: player.score,
+                x: player.x,
+                y: player.y,
+                direction: player.direction
+            },
+            currentLevelIndex: currentLevelIndex,
+            enemiesDestroyed: enemiesDestroyed,
+            walls: walls,
+        };
+        try {
+            localStorage.setItem('tankGameSave', JSON.stringify(gameData));
+            console.log('Игра сохранена!', gameData);
+            alert('Игра сохранена!');
+        } catch (e) {
+            console.error('Ошибка при сохранении игры:', e);
+            alert('Не удалось сохранить игру. Возможно, переполнено хранилище браузера.');
+        }
+    }
+
+    function loadGame() {
+        try {
+            const savedData = localStorage.getItem('tankGameSave');
+            if (savedData) {
+                const gameData = JSON.parse(savedData);
+
+                player.lives = gameData.player.lives;
+                player.score = gameData.player.score;
+                player.x = gameData.player.x;
+                player.y = gameData.player.y;
+                player.direction = gameData.player.direction;
+
+                currentLevelIndex = gameData.currentLevelIndex;
+                enemiesDestroyed = gameData.enemiesDestroyed;
+
+                walls = JSON.parse(JSON.stringify(gameData.walls));
+
+                enemies.length = 0;
+                bullets.length = 0;
+
+                player.isAlive = true;
+
+                // Важно: Отменяем текущий цикл, если он был запущен
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                gameLoopRunning = false; // Убедимся, что флаг сброшен перед запуском новой петли
+                isPaused = false; // Устанавливаем isPaused в false ЗДЕСЬ
+
+                console.log('Игра загружена!', gameData);
+                alert('Игра загружена!');
+                gameLoop(0); // Запускаем игровой цикл после загрузки
+            } else {
+                console.log('Сохранений нет. Начинаем новую игру.');
+                resetGame(); // Начинаем новую игру, если нет сохранений
+            }
+        } catch (e) {
+            console.error('Ошибка при загрузке игры (поврежденные данные?):', e);
+            alert('Не удалось загрузить игру (данные повреждены). Начинаем новую игру.');
+            resetGame(); // Начинаем новую игру, если ошибка при парсинге или другие проблемы
+        }
+    }
+
+    function resetGame() {
+        player.lives = 3;
+        player.score = 0;
+        player.x = player.initialPlayerPosition.x;
+        player.y = player.initialPlayerPosition.y;
+        player.direction = 0;
+        player.isAlive = true;
+        currentLevelIndex = 0;
+        enemiesDestroyed = 0;
+        enemies.length = 0;
+        bullets.length = 0;
+
+        // Важно: Отменяем текущий цикл перед сбросом
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        gameLoopRunning = false; // Убедимся, что флаг сброшен перед запуском новой петли
+        isPaused = false; // Устанавливаем isPaused в false ЗДЕСЬ
+
+        initLevel(); // Инициализация первого уровня
+
+        // Дополнительная очистка канваса при сбросе
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // Явно запускаем gameLoop после сброса
+        gameLoop(0); // Запускаем игровой цикл после сброса
+
+        console.log('Игра сброшена до начального состояния. Загружен уровень 1.');
+    }
+
+    // --- Функции управления уровнями ---
+    function initLevel() {
+        const levelData = levels[currentLevelIndex];
+        walls = JSON.parse(JSON.stringify(levelData.initialWalls));
+        enemies.length = 0;
+        bullets.length = 0;
+        enemiesDestroyed = 0;
+        player.x = player.initialPlayerPosition.x;
+        player.y = player.initialPlayerPosition.y;
+        player.direction = 0;
+
+        console.log(`Запущен уровень ${levelData.level}`);
+    }
+
+    function goToNextLevel() {
+        if (currentLevelIndex < levels.length - 1) {
+            currentLevelIndex++;
+            player.score += 500;
+            alert(`Уровень ${levels[currentLevelIndex].level} начался!`);
+            initLevel();
+        } else {
+            alert('Поздравляем! Вы прошли все уровни!');
+            resetGame();
+        }
+    }
+
+    // --- Пауза и игровой цикл ---
+    let isPaused = false;
+    let animationFrameId = null; // Инициализируем null
+    let gameLoopRunning = false; // Флаг, чтобы gameLoop запускался только один раз
+
+    function togglePause() {
+        isPaused = !isPaused;
+        if (isPaused) {
+            if (animationFrameId) { // Отменяем только если был запущен
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null; // Сбрасываем ID
+            }
+            gameLoopRunning = false; // Флаг: цикл остановлен
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.fillStyle = 'white';
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('ПАУЗА', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 40);
+            ctx.font = '20px Arial';
+            ctx.fillText('Нажмите P, чтобы продолжить', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+            ctx.fillText('Нажмите S, чтобы сохранить', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
+            ctx.fillText('Нажмите L, чтобы загрузить', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 60);
+            ctx.fillText('Нажмите N, чтобы начать новую игру', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 90);
+            ctx.textAlign = 'left';
+        } else {
+            // Если игра не на паузе и цикл не запущен, запускаем его
+            if (!gameLoopRunning) {
+                lastTime = performance.now(); // Сброс lastTime для корректного deltaTime
+                gameLoop(lastTime);
+            }
+        }
+    }
+
+
+    let lastTime = 0;
 
     function gameLoop(currentTime) {
-        const deltaTime = currentTime - lastTime; // Время с последнего кадра
+        if (isPaused) {
+            gameLoopRunning = false;
+            return;
+        }
+
+        gameLoopRunning = true; // Устанавливаем флаг здесь, т.к. мы точно знаем, что цикл активен
+
+        const deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
         // 1. Обновление состояния игры
         handlePlayerMovement();
         player.update();
 
-        // Спавн врагов, если их меньше maxEnemies
-        if (enemies.length < maxEnemies) {
+        const currentLevelData = levels[currentLevelIndex];
+        // Спавним врагов, пока их меньше максимального количества для уровня,
+        // и пока общее количество уничтоженных врагов на уровне меньше maxEnemies.
+        // Это предотвратит спавн бесконечного количества врагов, если счетчик enemiesDestroyed уже достиг maxEnemies
+        if (enemies.length < currentLevelData.maxEnemies && enemies.length + enemiesDestroyed < currentLevelData.maxEnemies) {
             enemies.push(createEnemy());
         }
 
-        // Обновляем и фильтруем пули
+
         for (let i = bullets.length - 1; i >= 0; i--) {
             const bullet = bullets[i];
             bullet.update();
 
             let bulletHitSomething = false;
 
-            // Проверка коллизий пули со стенами
             for (let j = walls.length - 1; j >= 0; j--) {
                 const wall = walls[j];
                 if (checkCollision(bullet, wall)) {
@@ -379,15 +598,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (bulletHitSomething) continue;
 
-            // Проверка коллизий пули с вражескими танками (если это пуля игрока)
             if (bullet.isPlayerBullet) {
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     const enemy = enemies[j];
                     if (checkCollision(bullet, enemy)) {
-                        bullets.splice(i, 1); // Удаляем пулю
-                        enemies.splice(j, 1); // Удаляем врага
-                        player.score += 100; // Добавляем очки
-                        enemiesDestroyed++; // Увеличиваем счетчик уничтоженных врагов
+                        bullets.splice(i, 1);
+                        enemies.splice(j, 1);
+                        player.score += 100;
+                        enemiesDestroyed++;
                         bulletHitSomething = true;
                         break;
                     }
@@ -395,19 +613,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (bulletHitSomething) continue;
 
-            // Проверка коллизий пули игрока с игроком (если это пуля врага)
             if (!bullet.isPlayerBullet) {
                 if (checkCollision(bullet, player)) {
-                    bullets.splice(i, 1); // Удаляем пулю
-                    player.lives--; // Уменьшаем жизни игрока
+                    bullets.splice(i, 1);
+                    player.lives--;
                     bulletHitSomething = true;
 
                     if (player.lives <= 0) {
-                        alert('Игра окончена! Вы уничтожили ' + enemiesDestroyed + ' врагов. Ваш счет: ' + player.score);
-                        // Здесь можно добавить сброс игры или переход к экрану проигрыша
-                        // Пока просто перезагрузим страницу
-                        document.location.reload();
-                        return; // Останавливаем игровой цикл
+                        player.isAlive = false;
+                        alert('Игра окончена! Вы уничтожили ' + player.score + ' очков. Начать заново?');
+                        resetGame(); // resetGame уже вызовет gameLoop
+                        saveGame();
+                        return;
                     }
                 }
             }
@@ -418,33 +635,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Обновляем вражеские танки и обрабатываем их стрельбу
         for (let i = enemies.length - 1; i >= 0; i--) {
             const enemy = enemies[i];
-            enemy.update(deltaTime); // Передаем deltaTime для таймеров
+            enemy.update(deltaTime);
 
-            // Враг стреляет
-            if (Math.random() < 0.005 && enemy.canShoot) { // Небольшой шанс на выстрел каждый кадр
+            if (Math.random() < 0.005 && enemy.canShoot) {
                 enemy.shoot();
             }
 
-            // Коллизии врагов с игроком (враги не могут наезжать на игрока)
             if (checkCollision(enemy, player)) {
-                // Откатываем врага назад, чтобы он не проезжал через игрока
                 enemy.x -= enemy.dx;
                 enemy.y -= enemy.dy;
-                enemy.direction = Math.floor(Math.random() * 4); // Меняем направление
+                enemy.direction = Math.floor(Math.random() * 4);
             }
 
-            // Коллизии врагов между собой (чтобы они не наезжали друг на друга)
             for (let j = enemies.length - 1; j >= 0; j--) {
                 const otherEnemy = enemies[j];
                 if (enemy !== otherEnemy && checkCollision(enemy, otherEnemy)) {
-                    enemy.x -= enemy.dx; // Откатываем
+                    enemy.x -= enemy.dx;
                     enemy.y -= enemy.dy;
-                    enemy.direction = Math.floor(Math.random() * 4); // Меняем направление
+                    enemy.direction = Math.floor(Math.random() * 4);
                 }
             }
+        }
+
+        // Проверка завершения уровня
+        if (enemiesDestroyed >= currentLevelData.maxEnemies && enemies.length === 0) {
+            goToNextLevel();
+            return;
         }
 
 
@@ -458,16 +676,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = wall.color;
             ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
         });
-        enemies.forEach(enemy => enemy.draw()); // Отрисовываем врагов
+        enemies.forEach(enemy => enemy.draw());
 
-        drawHUD(); // Отображаем HUD
+        drawHUD();
 
-        requestAnimationFrame(gameLoop);
+        animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-    gameLoop(0); // Запускаем игровой цикл, передаем 0 для первого deltaTime
-    // При первом вызове gameLoop, currentTime будет равно 0,
-    // так что deltaTime тоже будет 0, что нормально для инициализации.
+    // --- Инициализация игры при старте ---
+    // loadGame() теперь само запустит gameLoop
+    loadGame();
 
-    console.log('Игровой цикл запущен, появились враги и счет!');
+    console.log('Полностью обновленный script.js загружен. Проверьте функционал "Новой игры".');
 });
