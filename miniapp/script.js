@@ -321,4 +321,153 @@ document.addEventListener('DOMContentLoaded', () => {
             player.dy = player.speed;
             player.direction = 2;
         } else if (keys['ArrowLeft'] || keys['KeyA']) {
-            player.dx = -player.speed
+            player.dx = -player.speed;
+            player.direction = 3;
+        } else if (keys['ArrowRight'] || keys['KeyD']) {
+            player.dx = player.speed;
+            player.direction = 1;
+        }
+
+        if (keys['Space']) {
+            player.shoot();
+        }
+    }
+
+    // --- Отображение HUD (счет, жизни) ---
+    function drawHUD() {
+        ctx.fillStyle = 'white';
+        ctx.font = '16px Arial';
+        ctx.fillText(`Жизни: ${player.lives}`, 10, 20); // Отображаем жизни
+        ctx.fillText(`Счет: ${player.score}`, 10, 40); // Отображаем счет
+        ctx.fillText(`Врагов уничтожено: ${enemiesDestroyed}`, 10, 60); // Отображаем уничтоженных врагов
+    }
+
+    // --- Игровой цикл ---
+    let lastTime = 0; // Для расчета deltaTime
+
+    function gameLoop(currentTime) {
+        const deltaTime = currentTime - lastTime; // Время с последнего кадра
+        lastTime = currentTime;
+
+        // 1. Обновление состояния игры
+        handlePlayerMovement();
+        player.update();
+
+        // Спавн врагов, если их меньше maxEnemies
+        if (enemies.length < maxEnemies) {
+            enemies.push(createEnemy());
+        }
+
+        // Обновляем и фильтруем пули
+        for (let i = bullets.length - 1; i >= 0; i--) {
+            const bullet = bullets[i];
+            bullet.update();
+
+            let bulletHitSomething = false;
+
+            // Проверка коллизий пули со стенами
+            for (let j = walls.length - 1; j >= 0; j--) {
+                const wall = walls[j];
+                if (checkCollision(bullet, wall)) {
+                    if (!wall.indestructible) {
+                        walls.splice(j, 1);
+                    }
+                    bullets.splice(i, 1);
+                    bulletHitSomething = true;
+                    break;
+                }
+            }
+            if (bulletHitSomething) continue;
+
+            // Проверка коллизий пули с вражескими танками (если это пуля игрока)
+            if (bullet.isPlayerBullet) {
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (checkCollision(bullet, enemy)) {
+                        bullets.splice(i, 1); // Удаляем пулю
+                        enemies.splice(j, 1); // Удаляем врага
+                        player.score += 100; // Добавляем очки
+                        enemiesDestroyed++; // Увеличиваем счетчик уничтоженных врагов
+                        bulletHitSomething = true;
+                        break;
+                    }
+                }
+            }
+            if (bulletHitSomething) continue;
+
+            // Проверка коллизий пули игрока с игроком (если это пуля врага)
+            if (!bullet.isPlayerBullet) {
+                if (checkCollision(bullet, player)) {
+                    bullets.splice(i, 1); // Удаляем пулю
+                    player.lives--; // Уменьшаем жизни игрока
+                    bulletHitSomething = true;
+
+                    if (player.lives <= 0) {
+                        alert('Игра окончена! Вы уничтожили ' + enemiesDestroyed + ' врагов. Ваш счет: ' + player.score);
+                        // Здесь можно добавить сброс игры или переход к экрану проигрыша
+                        // Пока просто перезагрузим страницу
+                        document.location.reload();
+                        return; // Останавливаем игровой цикл
+                    }
+                }
+            }
+            if (bulletHitSomething) continue;
+
+            if (bullet.isOffScreen()) {
+                bullets.splice(i, 1);
+            }
+        }
+
+        // Обновляем вражеские танки и обрабатываем их стрельбу
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            const enemy = enemies[i];
+            enemy.update(deltaTime); // Передаем deltaTime для таймеров
+
+            // Враг стреляет
+            if (Math.random() < 0.005 && enemy.canShoot) { // Небольшой шанс на выстрел каждый кадр
+                enemy.shoot();
+            }
+
+            // Коллизии врагов с игроком (враги не могут наезжать на игрока)
+            if (checkCollision(enemy, player)) {
+                // Откатываем врага назад, чтобы он не проезжал через игрока
+                enemy.x -= enemy.dx;
+                enemy.y -= enemy.dy;
+                enemy.direction = Math.floor(Math.random() * 4); // Меняем направление
+            }
+
+            // Коллизии врагов между собой (чтобы они не наезжали друг на друга)
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                const otherEnemy = enemies[j];
+                if (enemy !== otherEnemy && checkCollision(enemy, otherEnemy)) {
+                    enemy.x -= enemy.dx; // Откатываем
+                    enemy.y -= enemy.dy;
+                    enemy.direction = Math.floor(Math.random() * 4); // Меняем направление
+                }
+            }
+        }
+
+
+        // 2. Очистка канваса
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+        // 3. Отрисовка всех объектов
+        player.draw();
+        bullets.forEach(bullet => bullet.draw());
+        walls.forEach(wall => {
+            ctx.fillStyle = wall.color;
+            ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+        });
+        enemies.forEach(enemy => enemy.draw()); // Отрисовываем врагов
+
+        drawHUD(); // Отображаем HUD
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop(0); // Запускаем игровой цикл, передаем 0 для первого deltaTime
+    // При первом вызове gameLoop, currentTime будет равно 0,
+    // так что deltaTime тоже будет 0, что нормально для инициализации.
+
+    console.log('Игровой цикл запущен, появились враги и счет!');
+});
