@@ -14,18 +14,31 @@ document.addEventListener('DOMContentLoaded', () => {
         height: 40,
         color: 'yellow',
         speed: 3,
-        dx: 0, // Изменение по X за кадр (скорость движения по горизонтали)
-        dy: 0, // Изменение по Y за кадр (скорость движения по вертикали)
+        dx: 0,
+        dy: 0,
+        // Добавим свойство для направления (0:вверх, 1:вправо, 2:вниз, 3:влево)
+        direction: 0, // По умолчанию танк смотрит вверх
 
         draw: function () {
             ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
-            // Добавим "пушку" для танка
+            // Отрисовка пушки в зависимости от направления
             ctx.fillStyle = 'gray';
-            // Пока пушка всегда смотрит вверх. Позже мы изменим её направление.
-            ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 15);
+            switch (this.direction) {
+                case 0: // Вверх
+                    ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 15);
+                    break;
+                case 1: // Вправо
+                    ctx.fillRect(this.x + this.width, this.y + this.height / 2 - 5, 15, 10);
+                    break;
+                case 2: // Вниз
+                    ctx.fillRect(this.x + this.width / 2 - 5, this.y + this.height - 5, 10, 15);
+                    break;
+                case 3: // Влево
+                    ctx.fillRect(this.x - 10, this.y + this.height / 2 - 5, 15, 10);
+                    break;
+            }
         },
-        // Метод для обновления позиции танка
         update: function () {
             this.x += this.dx;
             this.y += this.dy;
@@ -43,36 +56,84 @@ document.addEventListener('DOMContentLoaded', () => {
     const keys = {}; // Объект для отслеживания состояния клавиш (нажата/отпущена)
 
     document.addEventListener('keydown', (e) => {
-        keys[e.code] = true; // Записываем, что клавиша нажата
-        // console.log('Нажата:', e.code); // Отладка: посмотреть код нажатой клавиши
+        keys[e.code] = true;
     });
 
     document.addEventListener('keyup', (e) => {
-        keys[e.code] = false; // Записываем, что клавиша отпущена
+        keys[e.code] = false;
     });
 
-    // Функция для обработки движения на основе нажатых клавиш
+    // Получаем ссылки на сенсорные кнопки
+    const btnUp = document.getElementById('btnUp');
+    const btnDown = document.getElementById('btnDown');
+    const btnLeft = document.getElementById('btnLeft');
+    const btnRight = document.getElementById('btnRight');
+    const btnFire = document.getElementById('btnFire');
+
+    // Функция для обработки событий касания кнопок
+    function setupTouchControls() {
+        // Функция, которая "нажимает" виртуальную клавишу
+        const touchStartHandler = (e, keyCode) => {
+            e.preventDefault(); // Предотвращаем стандартное поведение браузера (например, скролл)
+            keys[keyCode] = true;
+        };
+
+        // Функция, которая "отпускает" виртуальную клавишу
+        const touchEndHandler = (e, keyCode) => {
+            e.preventDefault();
+            keys[keyCode] = false;
+        };
+
+        // Прикрепляем слушателей событий к каждой кнопке
+        btnUp.addEventListener('touchstart', (e) => touchStartHandler(e, 'ArrowUp'));
+        btnUp.addEventListener('touchend', (e) => touchEndHandler(e, 'ArrowUp'));
+        btnDown.addEventListener('touchstart', (e) => touchStartHandler(e, 'ArrowDown'));
+        btnDown.addEventListener('touchend', (e) => touchEndHandler(e, 'ArrowDown'));
+        btnLeft.addEventListener('touchstart', (e) => touchStartHandler(e, 'ArrowLeft'));
+        btnLeft.addEventListener('touchend', (e) => touchEndHandler(e, 'ArrowLeft'));
+        btnRight.addEventListener('touchstart', (e) => touchStartHandler(e, 'ArrowRight'));
+        btnRight.addEventListener('touchend', (e) => touchEndHandler(e, 'ArrowRight'));
+
+        // Кнопка стрельбы (пока не реализована, но готовимся)
+        btnFire.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            keys['Space'] = true; // Будет соответствовать нажатию пробела
+        });
+        btnFire.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys['Space'] = false;
+        });
+    }
+
+    // Вызываем функцию настройки сенсорных кнопок
+    setupTouchControls();
+
+
+    // Функция для обработки движения на основе нажатых клавиш (обновлена для направления)
     function handlePlayerMovement() {
         player.dx = 0;
         player.dy = 0;
 
-        if (keys['ArrowUp'] || keys['KeyW']) { // Клавиши вверх или W
+        // Если нажата только одна кнопка или несколько для одного направления,
+        // то определяем направление
+        if (keys['ArrowUp'] || keys['KeyW']) {
             player.dy = -player.speed;
-        }
-        if (keys['ArrowDown'] || keys['KeyS']) { // Клавиши вниз или S
+            player.direction = 0; // Вверх
+        } else if (keys['ArrowDown'] || keys['KeyS']) {
             player.dy = player.speed;
-        }
-        if (keys['ArrowLeft'] || keys['KeyA']) { // Клавиши влево или A
+            player.direction = 2; // Вниз
+        } else if (keys['ArrowLeft'] || keys['KeyA']) {
             player.dx = -player.speed;
-        }
-        if (keys['ArrowRight'] || keys['KeyD']) { // Клавиши вправо или D
+            player.direction = 3; // Влево
+        } else if (keys['ArrowRight'] || keys['KeyD']) {
             player.dx = player.speed;
+            player.direction = 1; // Вправо
         }
 
-        // Если нажаты две клавиши для движения по диагонали,
-        // нужно скорректировать скорость, чтобы не было быстрее
-        // (это более продвинутая техника, пока не будем её реализовывать,
-        // просто имей в виду, что танк будет двигаться быстрее по диагонали)
+        // Если нажаты две клавиши, например, вверх и вправо,
+        // приоритет отдается последней, или можно оставить диагональное движение.
+        // Для простоты пока танк будет двигаться только в одном из 4 основных направлений.
+        // Если нужны диагонали, логику нужно будет усложнить.
     }
 
 
@@ -80,8 +141,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function gameLoop() {
         // 1. Обновление состояния игры
-        handlePlayerMovement(); // Обрабатываем движение игрока
-        player.update();      // Обновляем позицию танка
+        handlePlayerMovement();
+        player.update();
 
         // 2. Очистка канваса
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -95,5 +156,5 @@ document.addEventListener('DOMContentLoaded', () => {
     // Запускаем игровой цикл
     gameLoop();
 
-    console.log('Игровой цикл запущен, попробуйте управлять танком стрелками или WASD!');
+    console.log('Игровой цикл запущен, попробуйте управлять танком стрелками/WASD или сенсорными кнопками!');
 });

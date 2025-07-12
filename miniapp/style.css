@@ -33,3 +33,92 @@ h1 {
     font-size: 0.9em;
     color: #aaa;
 }
+/* ... существующие стили ... */
+
+.touch-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    /* Выравнивание кнопок по низу */
+    width: 100%;
+    max-width: 640px;
+    /* Ширина канваса */
+    margin-top: 20px;
+    padding: 0 10px;
+    /* Небольшие отступы по бокам */
+    box-sizing: border-box;
+    /* Важно для padding */
+}
+
+.direction-pad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.direction-pad .row {
+    display: flex;
+    gap: 5px;
+    /* Расстояние между кнопками */
+}
+
+.control-button {
+    width: 60px;
+    /* Размер кнопки */
+    height: 60px;
+    background-color: #555;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2em;
+    /* Размер эмодзи */
+    cursor: pointer;
+    user-select: none;
+    /* Предотвращает выделение текста при касании */
+    transition: background-color 0.1s ease;
+    touch-action: manipulation;
+    /* Улучшает отзывчивость на тач-устройствах */
+}
+
+.control-button:active {
+    background-color: #777;
+    /* Цвет при нажатии */
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    /* Чтобы кнопка огня была по центру относительно D-пада */
+}
+
+.action-button {
+    background-color: #d9534f;
+    /* Красный цвет для кнопки огня */
+    width: 80px;
+    /* Чуть больше кнопка огня */
+    height: 80px;
+    font-size: 2.5em;
+    border-radius: 50%;
+    /* Круглая кнопка */
+}
+
+.action-button:active {
+    background-color: #c9302c;
+}
+
+/* Скрываем кнопки управления на больших экранах (например, ПК) */
+@media (min-width: 768px) {
+    .touch-controls {
+        display: none;
+    }
+}
+
+/* Показываем инструкции для ПК на больших экранах */
+@media (max-width: 767px) {
+    .controls {
+        display: none;
+    }
+}
