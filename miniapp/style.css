@@ -1,0 +1,35 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #222;
+    color: #eee;
+    font-family: Arial, sans-serif;
+}
+
+.game-container {
+    text-align: center;
+    background-color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+canvas {
+    border: 2px solid #555;
+    background-color: #000; /* Черный фон для игры */
+    display: block; /* Убирает лишние отступы под канвасом */
+    margin: 20px auto;
+}
+
+h1 {
+    color: #0f0; /* Ярко-зеленый цвет для заголовка */
+    margin-bottom: 10px;
+}
+
+.controls {
+    font-size: 0.9em;
+    color: #aaa;
+}
