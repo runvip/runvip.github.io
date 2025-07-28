@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Облегченный Просмотр Сайтов</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box; /* Учитываем padding в высоте */
+        }
+        .input-container {
+            display: flex;
+            margin-bottom: 10px;
+            gap: 10px; /* Промежуток между элементами */
+        }
+        input[type="text"] {
+            flex-grow: 1; /* Поле ввода занимает все доступное пространство */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none; /* Убираем стандартную обводку при фокусе */
+        }
+        input[type="text"]:focus {
+            border-color: #007bff; /* Цвет обводки при фокусе */
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            white-space: nowrap; /* Чтобы текст кнопки не переносился */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        iframe {
+            flex-grow: 1; /* Iframe занимает оставшееся пространство */
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        /* Стили для Telegram Mini Apps */
+        body.telegram-mini-app {
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+        }
+        body.telegram-mini-app input[type="text"] {
+            background-color: var(--tg-theme-secondary-bg-color);
+            border-color: var(--tg-theme-hint-color);
+            color: var(--tg-theme-text-color);
+        }
+        body.telegram-mini-app button {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="input-container">
+        <input type="text" id="urlInput" placeholder="Введите URL сайта (например, google.com)">
+        <button id="openButton">Открыть</button>
+    </div>
+    <iframe id="contentFrame" srcdoc="&lt;p style='text-align:center;color:#666;padding-top:20px;'&gt;Введите URL и нажмите 'Открыть', чтобы просмотреть сайт в облегченном режиме.&lt;/p&gt;"></iframe>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlInput = document.getElementById('urlInput');
+            const openButton = document.getElementById('openButton');
+            const contentFrame = document.getElementById('contentFrame');
+
+            // Инициализация Telegram Web App
+            if (window.Telegram && window.Telegram.WebApp) {
+                window.Telegram.WebApp.ready();
+                // Устанавливаем цвета в соответствии с темой Telegram
+                document.body.classList.add('telegram-mini-app');
+            }
+
+            // Функция для обработки URL
+            function openWebLight() {
+                let url = urlInput.value.trim();
+
+                if (!url) {
+                    alert('Пожалуйста, введите URL.');
+                    return;
+                }
+
+                // Добавляем 'http://' или 'https://', если протокол отсутствует
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url; // Предпочитаем HTTPS
+                }
+
+                // Формируем URL для Google Web Light
+                // Параметр "lite_url" используется для прямого перенаправления в Web Light.
+                // Параметр "no_image_prefetch" помогает предотвратить предварительную загрузку изображений,
+                // хотя Web Light и так их оптимизирует/удаляет.
+                const webLightUrl = `https://googleweblight.com/i?u=${encodeURIComponent(url)}&no_image_prefetch=1`;
+
+                // Загружаем URL в iframe
+                contentFrame.src = webLightUrl;
+            }
+
+            // Обработчик события для кнопки
+            openButton.addEventListener('click', openWebLight);
+
+            // Обработчик события для нажатия Enter в поле ввода
+            urlInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    openWebLight();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
