@@ -78,51 +78,92 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+        console.log('Скрипт загружен и ожидает DOMContentLoaded.'); // Добавлено для отладки
+
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOMContentLoaded событие сработало. DOM готов к работе.'); // Добавлено для отладки
+
             const urlInput = document.getElementById('urlInput');
             const openButton = document.getElementById('openButton');
             const contentFrame = document.getElementById('contentFrame');
 
+            // Проверка, найдены ли элементы DOM
+            if (!urlInput) {
+                console.error('Ошибка: Элемент с ID "urlInput" не найден!');
+            } else {
+                console.log('Элемент "urlInput" успешно найден.');
+            }
+            if (!openButton) {
+                console.error('Ошибка: Элемент с ID "openButton" не найден!');
+            } else {
+                console.log('Элемент "openButton" успешно найден.');
+            }
+            if (!contentFrame) {
+                console.error('Ошибка: Элемент с ID "contentFrame" не найден!');
+            } else {
+                console.log('Элемент "contentFrame" успешно найден.');
+            }
+
             // Инициализация Telegram Web App
             if (window.Telegram && window.Telegram.WebApp) {
                 window.Telegram.WebApp.ready();
-                // Устанавливаем цвета в соответствии с темой Telegram
                 document.body.classList.add('telegram-mini-app');
+                console.log('Telegram Web App инициализирован и класс "telegram-mini-app" добавлен к body.');
+            } else {
+                console.warn('Telegram Web App API (telegram-web-app.js) не обнаружен или еще не готов.');
             }
 
             // Функция для обработки URL
             function openWebLight() {
+                console.log('Функция openWebLight вызвана!'); // *** Ключевое сообщение для отладки ***
+
                 let url = urlInput.value.trim();
 
                 if (!url) {
                     alert('Пожалуйста, введите URL.');
+                    console.log('URL пустой, показано alert и функция завершена.');
                     return;
                 }
 
                 // Добавляем 'http://' или 'https://', если протокол отсутствует
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
                     url = 'https://' + url; // Предпочитаем HTTPS
+                    console.log('Протокол добавлен. Итоговый URL для WebLight: ' + url);
+                } else {
+                    console.log('Протокол уже есть. Итоговый URL для WebLight: ' + url);
                 }
 
                 // Формируем URL для Google Web Light
-                // Параметр "lite_url" используется для прямого перенаправления в Web Light.
-                // Параметр "no_image_prefetch" помогает предотвратить предварительную загрузку изображений,
-                // хотя Web Light и так их оптимизирует/удаляет.
                 const webLightUrl = `https://googleweblight.com/i?u=${encodeURIComponent(url)}&no_image_prefetch=1`;
+                console.log('Будет загружен URL в iframe: ' + webLightUrl); // Добавлено для отладки
 
-                // Загружаем URL в iframe
                 contentFrame.src = webLightUrl;
             }
 
             // Обработчик события для кнопки
-            openButton.addEventListener('click', openWebLight);
+            // Проверяем, существует ли openButton перед добавлением обработчика
+            if (openButton) {
+                openButton.addEventListener('click', () => {
+                    console.log('Кнопка "Открыть" нажата! Вызываю openWebLight().'); // *** Ключевое сообщение для отладки ***
+                    openWebLight();
+                });
+            } else {
+                console.error('Не могу добавить обработчик клика, "openButton" не найден!');
+            }
+
 
             // Обработчик события для нажатия Enter в поле ввода
-            urlInput.addEventListener('keypress', (event) => {
-                if (event.key === 'Enter') {
-                    openWebLight();
-                }
-            });
+            // Проверяем, существует ли urlInput перед добавлением обработчика
+            if (urlInput) {
+                urlInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        console.log('Нажата Enter в поле ввода! Вызываю openWebLight().'); // *** Ключевое сообщение для отладки ***
+                        openWebLight();
+                    }
+                });
+            } else {
+                console.error('Не могу добавить обработчик keypress, "urlInput" не найден!');
+            }
         });
     </script>
 </body>
