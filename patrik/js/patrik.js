@@ -671,12 +671,13 @@ async function localDo(text) {
     playSound('thinking');
     startProcessingSound();
     stopProcessingSound();
+    checkText = " " + text;
     try {
-        if (text.indexOf('радио') > 0) {
-            if (text.indexOf('включ') > 0 || text.indexOf('запус') > 0 || text.indexOf('друг') > 0) {
+        if (checkText.indexOf('радио') > 0) {
+            if (checkText.indexOf('включ') > 0 || checkText.indexOf('запус') > 0 || checkText.indexOf('друг') > 0 || checkText.indexOf('вруб') > 0) {
                 playRadio('next')
             }
-            if (text.indexOf('выключ') > 0 || text.indexOf('стоп') > 0) {
+            if (checkText.indexOf('выключ') > 0 || checkText.indexOf('стоп') > 0) {
                 stopRadio();
             }
 
