@@ -438,7 +438,6 @@ async function init() {
 
         audioPlayer.onended = handleAiFinishedSpeaking;
         audioPlayer.onerror = handleAiFinishedSpeaking;
-        playRadio();
 
     } catch (e) {
         setStatus('Ошибка', 'error');
@@ -653,7 +652,8 @@ function finalizeAIRequest() {
 
     if (finalPrompt.length > 1) {
         playSound('success');
-        sendToOllama(finalPrompt);
+        //sendToOllama(finalPrompt);
+        localDo(finalPrompt);
     } else {
         log('Тишина...', 'sys');
         setStatus('Готов', '');
@@ -661,6 +661,35 @@ function finalizeAIRequest() {
         patrikTurnAway(); // 3Д модель отворачивается
     }
 }
+
+// --- Думаю локально ---
+async function localDo(text) {
+    setStatus('Думаю...', 'processing');
+    log(`Запрос: "${text}"`, 'cmd');
+
+    // Голос "Дай подумать" + Тик-так
+    playSound('thinking');
+    startProcessingSound();
+    try {
+        if (text.indexOf('радио')) {
+            if (text.indexOf('включ') || text.indexOf('запус') || text.indexOf('друг')) {
+                playRadio('next')
+            }
+            if (text.indexOf('выключ') || text.indexOf('стоп')) {
+                stopRadio();
+            }
+
+        }
+
+    } catch (err) {
+        stopProcessingSound();
+        log(`Ошибка: ${err.message}`, 'error');
+        setStatus('Ошибка', 'error');
+        playSound('error');
+    }
+
+}
+
 
 // --- ОТПРАВКА В OLLAMA ---
 async function sendToOllama(text) {
@@ -884,7 +913,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnSend.onclick = () => {
             const text = textInput.value.trim();
             if (text) {
-                sendToOllama(text);
+                // sendToOllama(text);
+                localDo(text);
                 textInput.value = '';
             }
         };
