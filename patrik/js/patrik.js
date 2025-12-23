@@ -682,12 +682,11 @@ async function localDo(text) {
         }
 
     } catch (err) {
-        stopProcessingSound();
         log(`Ошибка: ${err.message}`, 'error');
         setStatus('Ошибка', 'error');
         playSound('error');
     }
-
+    stopProcessingSound();
 }
 
 
