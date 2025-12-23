@@ -7,7 +7,7 @@ const END_OF_PHRASE_DELAY = 3000;  // Ждем 1.5 сек тишины
 const COMMAND_COOLDOWN = 1500;     // Задержка после выполнения обычных команд
 
 // --- ЗВУКОВЫЕ ФРАЗЫ (ВАШИ ФАЙЛЫ) ---
-const SOUNDS_PATH = 'https://dewiar.com/patrik/sounds/';// 'sounds/';
+const SOUNDS_PATH = 'sounds/';
 
 const VOICE_ASSETS = {
     wake: ['wake_1.mp3', 'wake_2.mp3', 'wake_3.mp3'],
