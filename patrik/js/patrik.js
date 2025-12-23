@@ -433,7 +433,7 @@ async function init() {
         setStatus('Готов', '');
         btnStart.disabled = false;
         patrikLookAtMe(); // Поворачиваем Патрика лицом к нам
-        log(`Система готова. Нажмите ВКЛЮЧИТЬ! После этого Вы можете ЗАПУСТИТЬ РАДИО, сохранить СОБЫТИЕ или ЗАМЕТКУ. Подробнее <a href="help">ЗДЕСЬ</a>`, 'sys');
+        log(`Система готова. Нажмите ВКЛЮЧИТЬ! После этого Вы можете ЗАПУСТИТЬ РАДИО.`, 'sys');
         // playSound('success');
 
         audioPlayer.onended = handleAiFinishedSpeaking;
@@ -679,6 +679,7 @@ async function localDo(text) {
             }
             if (checkText.indexOf('выключ') > 0 || checkText.indexOf('стоп') > 0) {
                 stopRadio();
+                setStatus('Готов', '');
             }
 
         }
