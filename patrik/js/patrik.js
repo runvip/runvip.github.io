@@ -671,11 +671,11 @@ async function localDo(text) {
     playSound('thinking');
     startProcessingSound();
     try {
-        if (text.indexOf('радио')) {
-            if (text.indexOf('включ') || text.indexOf('запус') || text.indexOf('друг')) {
+        if (text.indexOf('радио') > 0) {
+            if (text.indexOf('включ') > 0 || text.indexOf('запус') > 0 || text.indexOf('друг') > 0) {
                 playRadio('next')
             }
-            if (text.indexOf('выключ') || text.indexOf('стоп')) {
+            if (text.indexOf('выключ') > 0 || text.indexOf('стоп') > 0) {
                 stopRadio();
             }
 
