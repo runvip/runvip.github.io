@@ -670,6 +670,7 @@ async function localDo(text) {
     // Голос "Дай подумать" + Тик-так
     playSound('thinking');
     startProcessingSound();
+    stopProcessingSound();
     try {
         if (text.indexOf('радио') > 0) {
             if (text.indexOf('включ') > 0 || text.indexOf('запус') > 0 || text.indexOf('друг') > 0) {
@@ -686,7 +687,7 @@ async function localDo(text) {
         setStatus('Ошибка', 'error');
         playSound('error');
     }
-    stopProcessingSound();
+
 }
 
 
