@@ -438,7 +438,7 @@ async function init() {
 
         audioPlayer.onended = handleAiFinishedSpeaking;
         audioPlayer.onerror = handleAiFinishedSpeaking;
-
+        playRadio();
 
     } catch (e) {
         setStatus('Ошибка', 'error');
