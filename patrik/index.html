@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Патрик - AI Интерфейс</title>
+    <link rel="shortcut icon" href="img/favicon.png" type="image/x-icon" id="favicon" />
+    <link rel="stylesheet" href="css/patrik.css">
+    <link rel="stylesheet" href="css/all.min.css">
+    <script type="module" src="js/model-viewer.min.js"></script>
+</head>
+
+<body>
+    <div id="crm">
+        <a href="crm_dashboard"><i class="fas fa-chart-line"></i> PATRIK-CRM</a>
+        <a href="help"><i class="fas fa-lightbulb"></i> КАК РАБОТАЕТ</a>
+    </div>
+
+    <div class="main-content">
+        <h1 class="patrik-title">
+            <span class="accent-dot"></span>
+            ПАТРИК AI
+            <span class="accent-dot"></span>
+        </h1>
+        <div class="avatar-container" id="avatar-wrapper">
+            <model-viewer id="patrik-model" src="https://dewiar.com/patrik/img/patrick_star.glb" alt="Виртуальный Патрик AI"
+                shadow-intensity="0.7" rotation-per-second="10deg" cameraOrbit="0deg 90deg 10m" camera-controls
+                disable-zoom style="width: 100%; height: 100%; border-radius: 50%;">
+            </model-viewer>
+        </div>
+        <div id="status-ring" class="status-overlay"></div>
+        <div id="status-text">Загружаю...</div>
+        <div class="controls">
+            <button id="btnStart" disabled>ВКЛЮЧИТЬ</button>
+            <button id="btnStop" class="stop" style="display:none;">ОСТАНОВИТЬ</button>
+        </div>
+    </div>
+    <div class="text-input-container">
+        <input type="text" id="textInput" placeholder="Или напишите текстом...">
+        <button id="btnSend" class="send-btn"><i class="fas fa-envelope"></i></button>
+    </div>
+    <div id="log">
+        <h1><i class="fas fa-robot"></i> Что умеет Патрик?</h1>
+        <p>Теперь это не просто голосовой помощник, а ваша личная CRM система. Просто говорите ему, что происходит в вашей
+            жизни, и он всё запишет.</p>
+        
+        <h2>1. Финансы (Доходы и Расходы)</h2>
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-money-bill-wave"></i></span> <strong>Запись трат:</strong>
+            Скажите, что вы купили и за сколько.
+            <span class="example">"Я купил продукты на 1500 рублей"</span>
+            <span class="example">"Потратил 300 рублей на такси"</span>
+            <div class="response-preview">Патрик запишет это в расходы и покажет остаток за месяц.</div>
+        </div>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-hand-holding-dollar"></i></span> <strong>Запись доходов:</strong>
+            <span class="example">"Получил зарплату 50000 рублей"</span>
+            <span class="example">"Мне вернули долг 1000"</span>
+        </div>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-chart-line"></i></span> <strong>Отчеты:</strong>
+            <span class="example">"Какие у меня расходы в этом месяце?"</span>
+            <span class="example">"Сколько денег осталось?"</span>
+        </div>
+        
+        <h2>2. Календарь и События</h2>
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-calendar-days"></i></span> <strong>Напоминания и встречи:</strong>
+            Назовите событие и время (дату или день недели).
+            <span class="example">"Встреча с клиентом завтра в 14:00"</span>
+            <span class="example">"Напомни купить корм коту в пятницу вечером"</span>
+            <div class="response-preview">Патрик создаст событие с точной датой.</div>
+        </div>
+        
+        <h2>3. Быстрые Заметки</h2>
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-file-alt"></i></span> <strong>Сохранение информации:</strong>
+            Используйте ключевые слова "Сохрани", "Запиши", "Заметка".
+            <span class="example">"Запиши код от подъезда 4589"</span>
+            <span class="example">"Сохрани заметку: идея для видео про ИИ"</span>
+        </div>
+        
+        <h2>4. Голосовые команды управления</h2>
+        <p>Эти команды позволяют контролировать процесс диалога и работу микрофона.</p>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-volume-xmark"></i></span> <strong>Мгновенная тишина:</strong>
+            Останавливает текущий ответ Патрика или музыку, но оставляет его в режиме "Слушаю".
+            <span class="example-list">
+                <span class="example-item">"Стоп"</span>
+                <span class="example-item">"Хватит"</span>
+                <span class="example-item">"Тихо"</span>
+                <span class="example-item">"Замолчи"</span>
+            </span>
+        </div>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-microphone-slash"></i></span> <strong>Полное выключение:</strong>
+            Прерывает всё И полностью отключает микрофон (аналог кнопки ОСТАНОВИТЬ).
+            <span class="example-list">
+                <span class="example-item">"Останови"</span>
+            </span>
+        </div>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-history"></i></span> <strong>Сброс диалога:</strong>
+            Удаляет всю историю ваших предыдущих сообщений для Патрика ("чистый лист").
+            <span class="example-list">
+                <span class="example-item">"Забудь всё"</span>
+                <span class="example-item">"Удали переписку"</span>
+                <span class="example-item">"Очисти диалог"</span>
+            </span>
+        </div>
+        
+        <h2><i class="fas fa-music"></i> Музыка и Радио</h2>
+        <p>Патрик теперь диджей! Он может включать онлайн-радиостанции. Работает фоном, приглушаясь во время диалога.</p>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-play-circle"></i></span> <strong>Включение радио:</strong>
+            Скажите "Включи радио" (включится случайная или последняя) или назовите конкретную станцию.
+            <span class="example-list">
+                <span class="example-item">"Включи радио"</span>
+                <span class="example-item">"Вруби музыку"</span>
+                <span class="example-item">"Поставь Марусю ФМ"</span>
+                <span class="example-item">"Хочу послушать Джаз"</span>
+            </span>
+        </div>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-sliders-h"></i></span> <strong>Управление воспроизведением:</strong>
+            Эти команды выполняются мгновенно, даже если Патрик говорит.
+            <span class="example-list">
+                <span class="example-item">"Дальше" / "Следующий" (След. станция)</span>
+                <span class="example-item">"Назад" (Пред. станция)</span>
+                <span class="example-item">"Пауза" / "Замри" (Пауза радио)</span>
+                <span class="example-item">"Играй" / "Продолжи" (Снять с паузы)</span>
+            </span>
+        </div>
+        
+        <div class="command-block" style="border-left: 4px solid #ff79c6;">
+            <span class="icon"><i class="fas fa-volume-up"></i></span> <strong>Громкость радио:</strong>
+            Регулировка громкости музыки (шаг 20%). Настройки сохраняются.
+            <span class="example-list">
+                <span class="example-item">"Громче" / "Погромче"</span>
+                <span class="example-item">"Тише" / "Потише"</span>
+            </span>
+        </div>
+        
+        <div class="command-block">
+            <span class="icon"><i class="fas fa-list-ul"></i></span> <strong>Доступные станции:</strong>
+            <div style="font-size: 0.9em; line-height: 1.6; margin-top: 10px; color: #f1fa8c;">
+                Русское Радио, Рекорд, Маруся ФМ, Наше Радио, Вести FM, Маяк, DFM, Радио России,
+                Комсомольская Правда, Максимум, NRJ, Relax FM, Радио Книга, Ultra, JAZZ, ТНТ, Вата, Ретро Хит, Ремикс ФМ, Радио
+                Cafe, Русский рок, Mixadance, Монстры рока СССР, NOH FM, Радио Премиум, Гламурная волна, Панки Хой, ХАЙП ФМ.
+            </div>
+        </div>
+    </div><input type="hidden" name="admA" id="admA" value="126242" /><input type="hidden" name="kodA" id="kodA"
+        value="f188a637e46669f74dd50e650942e2b952000a3877fe718ce0d36c1ca024e47e" />
+    <script src="lib/vosk.js"></script>
+    <script src="js/marked.min.js"></script>
+    <script src="js/patrik.js?rft=40"></script>
+</body>
+
+</html>
