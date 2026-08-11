@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Стабильный Пульсометр (Mobile)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      margin: 0;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 3 / 4;
+      border-radius: 16px;
+      overflow: hidden;
+      background-color: #000;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    /* Визуальная мишень для лба */
+    .roi-target {
+      position: absolute;
+      top: 22%;
+      left: 35%;
+      width: 30%;
+      height: 12%;
+      border: 2px solid #2ed573;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(46, 213, 115, 0.5);
+      pointer-events: none;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .roi-label {
+      font-size: 10px;
+      color: #2ed573;
+      font-weight: bold;
+      background: rgba(0,0,0,0.6);
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    canvas { display: none; }
+
+    .dashboard {
+      width: 100%;
+      max-width: 320px;
+      margin-top: 15px;
+      background: #1e1e1e;
+      padding: 15px 20px;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bpm-box {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .bpm-value {
+      font-size: 42px;
+      font-weight: 800;
+      color: #ff4757;
+      font-family: monospace;
+    }
+
+    .status-box {
+      text-align: right;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: #2ed573;
+      font-weight: 600;
+    }
+
+    .progress-bar-container {
+      width: 100px;
+      height: 6px;
+      background-color: #333;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+      margin-left: auto;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #2ed573;
+      transition: width 0.2s linear;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <video id="video" playsinline autoplay muted></video>
+    <!-- Зеленая рамка-мишень прямо поверх видео -->
+    <div class="roi-target">
+      <span class="roi-label">ПОМЕСТИТЕ ЛОБ</span>
+    </div>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="dashboard">
+    <div class="bpm-box">
+      <span class="bpm-value" id="bpmDisplay">--</span>
+      <span style="color:#888; font-weight: bold;">BPM</span>
+    </div>
+    <div class="status-box">
+      <div class="status-text" id="statusText">Запуск камеры...</div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const bpmDisplay = document.getElementById('bpmDisplay');
+    const statusText = document.getElementById('statusText');
+    const progressBar = document.getElementById('progressBar');
+
+    const BUFFER_SECONDS = 8;
+    const rgbBuffer = [];
+    const timeBuffer = [];
+
+    // Старт веб-камеры
+    async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          },
+          audio: false
+        });
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+          statusText.innerText = "Поместите лоб в рамку";
+          requestAnimationFrame(processLoop);
+        };
+      } catch (err) {
+        statusText.innerText = "Ошибка доступа к камере";
+        alert("Включите доступ к камере или откройте через HTTPS!");
+      }
+    }
+
+    // Главный цикл обработки кадров без нагрузки на CPU
+    function processLoop() {
+      if (video.videoWidth > 0) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // Рисуем текущий кадр видео на скрытый canvas
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Координаты рамки лба в пропорциях (соответствуют .roi-target)
+        const roi = {
+          x: Math.floor(canvas.width * 0.35),
+          y: Math.floor(canvas.height * 0.22),
+          width: Math.floor(canvas.width * 0.30),
+          height: Math.floor(canvas.height * 0.12)
+        };
+
+        // Забираем данные цветности из выбранного региона
+        const imageData = ctx.getImageData(roi.x, roi.y, roi.width, roi.height);
+        const rgb = getAverageRGB(imageData.data);
+
+        const now = performance.now() / 1000;
+        rgbBuffer.push(rgb);
+        timeBuffer.push(now);
+
+        // Очищаем буфер от устаревших данных
+        while (timeBuffer.length > 0 && (now - timeBuffer[0]) > BUFFER_SECONDS) {
+          timeBuffer.shift();
+          rgbBuffer.shift();
+        }
+
+        const fillRatio = Math.min(1, (now - timeBuffer[0]) / BUFFER_SECONDS);
+        progressBar.style.width = `${fillRatio * 100}%`;
+
+        if (fillRatio < 1) {
+          statusText.innerText = "Сбор данных... Не двигайтесь";
+        } else {
+          statusText.innerText = "Измерение...";
+
+          // 1. Очистка сигнала алгоритмом POS
+          const posSignal = processPOS(rgbBuffer);
+
+          // 2. Расчет актуального FPS устройства
+          const actualFps = timeBuffer.length / (now - timeBuffer[0]);
+
+          // 3. Вычисление точного BPM через FFT
+          const bpm = calculateBPM(posSignal, actualFps);
+
+          if (bpm && bpm >= 50 && bpm <= 170) {
+            bpmDisplay.innerText = bpm;
+          }
+        }
+      }
+
+      requestAnimationFrame(processLoop);
+    }
+
+    // Извлечение средних значений R, G, B
+    function getAverageRGB(data) {
+      let r = 0, g = 0, b = 0;
+      const total = data.length / 4;
+
+      for (let i = 0; i < data.length; i += 4) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+      }
+
+      return { r: r / total, g: g / total, b: b / total };
+    }
+
+    // Алгоритм POS (Plane-Orthogonal-to-Skin)
+    function processPOS(buffer) {
+      const N = buffer.length;
+      let meanR = 0, meanG = 0, meanB = 0;
+
+      for (let i = 0; i < N; i++) {
+        meanR += buffer[i].r;
+        meanG += buffer[i].g;
+        meanB += buffer[i].b;
+      }
+      meanR /= N; meanG /= N; meanB /= N;
+
+      const S1 = [], S2 = [];
+      for (let i = 0; i < N; i++) {
+        const rNorm = buffer[i].r / (meanR || 1);
+        const gNorm = buffer[i].g / (meanG || 1);
+        const bNorm = buffer[i].b / (meanB || 1);
+
+        S1.push(gNorm - bNorm);
+        S2.push(gNorm + bNorm - 2 * rNorm);
+      }
+
+      const std1 = getStdDev(S1);
+      const std2 = getStdDev(S2);
+      const alpha = std2 === 0 ? 0 : std1 / std2;
+
+      const S = [];
+      for (let i = 0; i < N; i++) {
+        S.push(S1[i] + alpha * S2[i]);
+      }
+      return S;
+    }
+
+    // Частотный анализ (FFT / DFT)
+    function calculateBPM(signal, fps) {
+      const N = signal.length;
+      const mean = signal.reduce((a, b) => a + b, 0) / N;
+      
+      // Скользящее сглаживание от шумов движения
+      const centered = signal.map(v => v - mean);
+      const windowed = centered.map((v, i) => v * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1)))));
+
+      let maxPower = 0;
+      let peakFreq = 0;
+
+      // Диапазон пульса: 0.83 Гц (50 BPM) - 2.83 Гц (170 BPM)
+      for (let freq = 0.83; freq <= 2.83; freq += 0.02) {
+        let real = 0, imag = 0;
+        for (let t = 0; t < N; t++) {
+          const angle = (2 * Math.PI * freq * t) / fps;
+          real += windowed[t] * Math.cos(angle);
+          imag -= windowed[t] * Math.sin(angle);
+        }
+        const power = real * real + imag * imag;
+        if (power > maxPower) {
+          maxPower = power;
+          peakFreq = freq;
+        }
+      }
+
+      return Math.round(peakFreq * 60);
+    }
+
+    function getStdDev(arr) {
+      const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+      return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
+    }
+
+    initCamera();
+  </script>
+</body>
+</html>
