@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Измерение пульса через веб-камеру (rPPG)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    .container {
+      position: relative;
+      width: 640px;
+      height: 480px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      background-color: #000;
+    }
+
+    video, canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+
+    .stats {
+      margin-top: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #28a745;
+    }
+
+    .status {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Измерение пульса (rPPG)</h1>
+  
+  <div class="container">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+  </div>
+
+  <div class="controls">
+    <button id="startBtn">Запустить камеру</button>
+  </div>
+
+  <div class="stats" id="bpmDisplay">BPM: --</div>
+  <div class="status" id="statusText">Нажмите "Запустить камеру" и держите голову неподвижно.</div>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const startBtn = document.getElementById('startBtn');
+    const bpmDisplay = document.getElementById('bpmDisplay');
+    const statusText = document.getElementById('statusText');
+
+    const BUFFER_SIZE = 150; // Буфер кадров (~5 секунд при 30 FPS)
+    const FPS = 30;
+    const greenBuffer = [];
+    let isProcessing = false;
+
+    // Запуск веб-камеры
+    startBtn.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, frameRate: { ideal: 30 } }
+        });
+        video.srcObject = stream;
+        startBtn.disabled = true;
+        statusText.innerText = "Идет сбор данных... Старайтесь не двигаться.";
+        isProcessing = true;
+        requestAnimationFrame(processFrame);
+      } catch (err) {
+        alert("Не удалось получить доступ к веб-камере: " + err.message);
+      }
+    });
+
+    // Основной цикл обработки кадров
+    function processFrame() {
+      if (!isProcessing) return;
+
+      // Рисуем кадр с видео на холст
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // ROI (Region of Interest) — зафиксированная зона лба
+      // В реальном проекте координаты подбираются через MediaPipe Face Mesh
+      const roi = {
+        x: canvas.width * 0.4,
+        y: canvas.height * 0.2,
+        width: canvas.width * 0.2,
+        height: canvas.height * 0.1
+      };
+
+      // Рисуем рамку ROI для наглядности
+      ctx.strokeStyle = '#00FF00';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(roi.x, roi.y, roi.width, roi.height);
+
+      // Извлекаем данные пикселей из области ROI
+      const imageData = ctx.getImageData(roi.x, roi.y, roi.width, roi.height);
+      const avgGreen = getAverageGreen(imageData);
+
+      // Заполняем кольцевой буфер значений зеленого канала
+      greenBuffer.push(avgGreen);
+      if (greenBuffer.length > BUFFER_SIZE) {
+        greenBuffer.shift();
+      }
+
+      // Вычисляем пульс, когда набралось достаточно данных
+      if (greenBuffer.length === BUFFER_SIZE) {
+        const bpm = estimateBPM(greenBuffer, FPS);
+        if (bpm) {
+          bpmDisplay.innerText = `BPM: ${bpm}`;
+        }
+      }
+
+      requestAnimationFrame(processFrame);
+    }
+
+    // Расчет средней интенсивности зеленого канала
+    function getAverageGreen(imageData) {
+      const data = imageData.data;
+      let sumGreen = 0;
+      const totalPixels = data.length / 4;
+
+      for (let i = 0; i < data.length; i += 4) {
+        sumGreen += data[i + 1]; // G-канал
+      }
+
+      return sumGreen / totalPixels;
+    }
+
+    // Упрощенный поиск частоты (BPM) через подсчет пиков сигналов
+    function estimateBPM(signal, fps) {
+      // 1. Детрендинг (центровка сигнала вокруг нуля)
+      const mean = signal.reduce((a, b) => a + b, 0) / signal.length;
+      const centered = signal.map(v => v - mean);
+
+      // 2. Сглаживание (скользящее среднее)
+      const smoothed = [];
+      const windowSize = 3;
+      for (let i = 0; i < centered.length; i++) {
+        let sum = 0;
+        let count = 0;
+        for (let j = -windowSize; j <= windowSize; j++) {
+          if (i + j >= 0 && i + j < centered.length) {
+            sum += centered[i + j];
+            count++;
+          }
+        }
+        smoothed.push(sum / count);
+      }
+
+      // 3. Подсчет локальных максимумов (пиков)
+      let peakCount = 0;
+      for (let i = 1; i < smoothed.length - 1; i++) {
+        if (smoothed[i] > smoothed[i - 1] && smoothed[i] > smoothed[i + 1] && smoothed[i] > 0) {
+          peakCount++;
+        }
+      }
+
+      // Перевод количества пиков во время и в BPM
+      const durationInSeconds = signal.length / fps;
+      const bpm = Math.round((peakCount / durationInSeconds) * 60);
+
+      // Фильтрация аномальных значений для человека в покое (45–180 BPM)
+      if (bpm >= 45 && bpm <= 180) {
+        return bpm;
+      }
+      return null;
+    }
+  </script>
+</body>
+</html>
