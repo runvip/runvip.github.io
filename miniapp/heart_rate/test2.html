@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPipe Face Mesh - Dynamic ROI Tracking</title>
+  
+  <!-- Подключение библиотек MediaPipe через CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      position: relative;
+      width: 640px;
+      height: 480px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      background-color: #000;
+    }
+
+    /* Видео остается скрытым, отображаем только Canvas с наложением */
+    video {
+      display: none;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+    }
+
+    .info-panel {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #1e1e1e;
+      border-radius: 8px;
+      display: flex;
+      gap: 20px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .status {
+      margin-top: 10px;
+      color: #888;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Трекинг области лица (MediaPipe Face Mesh)</h2>
+
+  <div class="container">
+    <video id="video" playsinline></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+  </div>
+
+  <div class="info-panel">
+    <div>R: <span id="valR">0</span></div>
+    <div>G: <span id="valG">0</span></div>
+    <div>B: <span id="valB">0</span></div>
+  </div>
+
+  <div class="status" id="statusText">Инициализация нейросети...</div>
+
+  <script>
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+
+    const valR = document.getElementById('valR');
+    const valG = document.getElementById('valG');
+    const valB = document.getElementById('valB');
+    const statusText = document.getElementById('statusText');
+
+    // Ключевые точки MediaPipe Face Mesh для ROI
+    // Лоб: 10 (верх), 67 (лево), 297 (право), 109/338 (центр)
+    const FOREHEAD_INDEXES = [10, 67, 109, 338, 297];
+    
+    // Левая щека: 50, 117, 118, 101, 205
+    // Правая щека: 280, 346, 347, 330, 425
+
+    // Инициализация Face Mesh
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: false,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+
+    faceMesh.onResults(onResults);
+
+    // Обработка результатов детекции
+    function onResults(results) {
+      statusText.innerText = "Лицо отслеживается. Данные считываются.";
+
+      // Очистка холста и отрисовка кадра с веб-камеры
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0];
+
+        // 1. Получение полигона области лба по ключевым точкам
+        const foreheadPolygon = FOREHEAD_INDEXES.map(index => ({
+          x: landmarks[index].x * canvasElement.width,
+          y: landmarks[index].y * canvasElement.height
+        }));
+
+        // 2. Отрисовка динамической рамки лба
+        drawPolygon(foreheadPolygon, '#00FF00');
+
+        // 3. Извлечение усредненных цветных пикселей (RGB) из полигона
+        const rgb = getAverageRGBFromPolygon(foreheadPolygon);
+
+        // Вывод показателей на экран
+        valR.innerText = rgb.r.toFixed(1);
+        valG.innerText = rgb.g.toFixed(1);
+        valB.innerText = rgb.b.toFixed(1);
+      } else {
+        statusText.innerText = "Поместите лицо в кадр.";
+      }
+
+      canvasCtx.restore();
+    }
+
+    // Вспомогательная функция отрисовки контура ROI
+    function drawPolygon(points, color) {
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        canvasCtx.lineTo(points[i].x, points[i].y);
+      }
+      canvasCtx.closePath();
+      canvasCtx.strokeStyle = color;
+      canvasCtx.lineWidth = 2;
+      canvasCtx.stroke();
+    }
+
+    // Функция считывания средних значений RGB из произвольного полигона (ROI)
+    function getAverageRGBFromPolygon(points) {
+      // Находим Bounding Box вокруг полигона для оптимизации сканирования
+      let minX = canvasElement.width, maxX = 0, minY = canvasElement.height, maxY = 0;
+      points.forEach(p => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+
+      const width = Math.max(1, Math.floor(maxX - minX));
+      const height = Math.max(1, Math.floor(maxY - minY));
+
+      // Получаем растровые данные из этой области
+      const imageData = canvasCtx.getImageData(Math.floor(minX), Math.floor(minY), width, height);
+      const data = imageData.data;
+
+      let sumR = 0, sumG = 0, sumB = 0, count = 0;
+
+      // Проходим только по пикселям, входящим в полигон лба
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const px = minX + x;
+          const py = minY + y;
+
+          if (isPointInPolygon({x: px, y: py}, points)) {
+            const index = (y * width + x) * 4;
+            sumR += data[index];
+            sumG += data[index + 1];
+            sumB += data[index + 2];
+            count++;
+          }
+        }
+      }
+
+      return count > 0 
+        ? { r: sumR / count, g: sumG / count, b: sumB / count }
+        : { r: 0, g: 0, b: 0 };
+    }
+
+    // Алгоритм Ray-Casting для проверки вхождения точки в полигон
+    function isPointInPolygon(point, polygon) {
+      let isInside = false;
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].x, yi = polygon[i].y;
+        const xj = polygon[j].x, yj = polygon[j].y;
+
+        const intersect = ((yi > point.y) !== (yj > point.y)) &&
+            (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+        if (intersect) isInside = !isInside;
+      }
+      return isInside;
+    }
+
+    // Настройка и запуск потока с камеры через MediaPipe Camera Utils
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({ image: videoElement });
+      },
+      width: 640,
+      height: 480
+    });
+
+    camera.start();
+  </script>
+</body>
+</html>
