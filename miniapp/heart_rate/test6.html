@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>rPPG Mobile Fix</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 3 / 4;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    video { display: none; }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .dashboard {
+      width: 100%;
+      max-width: 320px;
+      margin-top: 10px;
+      background: #1e1e1e;
+      padding: 12px 16px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .bpm-box {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .bpm-value {
+      font-size: 36px;
+      font-weight: 800;
+      color: #ff4757;
+      font-family: monospace;
+    }
+
+    .status-box {
+      text-align: right;
+    }
+
+    .status-text {
+      font-size: 12px;
+      color: #2ed573;
+      font-weight: 600;
+    }
+
+    .progress-bar-container {
+      width: 80px;
+      height: 6px;
+      background-color: #333;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+      margin-left: auto;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #2ed573;
+      transition: width 0.2s linear;
+    }
+
+    #debugLog {
+      margin-top: 8px;
+      font-size: 11px;
+      color: #888;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <video id="video" playsinline muted></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <div class="dashboard">
+    <div class="bpm-box">
+      <span class="bpm-value" id="bpmDisplay">--</span>
+      <span style="color:#888; font-size: 12px;">BPM</span>
+    </div>
+    <div class="status-box">
+      <div class="status-text" id="statusText">Инициализация...</div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="debugLog">Статус: Запуск...</div>
+
+  <script>
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvasCtx = canvasElement.getContext('2d', { alpha: false });
+    const bpmDisplay = document.getElementById('bpmDisplay');
+    const statusText = document.getElementById('statusText');
+    const progressBar = document.getElementById('progressBar');
+    const debugLog = document.getElementById('debugLog');
+
+    const FOREHEAD_INDEXES = [10, 67, 109, 338, 297];
+    const BUFFER_SECONDS = 7;
+    const timeBuffer = [];
+    const rgbBuffer = [];
+
+    let isProcessing = false;
+    let cachedRoi = null;
+    let framesProcessed = 0;
+
+    function log(msg) {
+      debugLog.innerText = `Лог: ${msg}`;
+    }
+
+    // Инициализация FaceMesh
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: false,
+      minDetectionConfidence: 0.3, // Снижаем порог чувствительности для мобильных
+      minTrackingConfidence: 0.3
+    });
+
+    faceMesh.onResults(onResults);
+
+    // Запуск камеры
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        if (!isProcessing) {
+          isProcessing = true;
+          try {
+            await faceMesh.send({ image: videoElement });
+          } catch (e) {
+            log("Ошибка FaceMesh: " + e.message);
+          }
+          isProcessing = false;
+        }
+      },
+      width: 320,
+      height: 240,
+      facingMode: 'user'
+    });
+
+    camera.start().then(() => {
+      log("Камера запущена. Ожидание детекции...");
+      statusText.innerText = "Положите телефон";
+    }).catch(err => {
+      log("Ошибка камеры: " + err.message);
+      statusText.innerText = "Ошибка камеры";
+    });
+
+    function onResults(results) {
+      framesProcessed++;
+
+      // Подгоняем холст под реальный размер видео
+      if (canvasElement.width !== videoElement.videoWidth && videoElement.videoWidth > 0) {
+        canvasElement.width = videoElement.videoWidth;
+        canvasElement.height = videoElement.videoHeight;
+      }
+
+      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0];
+        cachedRoi = getForeheadBoundingBox(landmarks, canvasElement.width, canvasElement.height);
+        log(`Лицо найдено (Кадр: ${framesProcessed})`);
+      }
+
+      if (cachedRoi) {
+        // Отрисовка зоны лба
+        canvasCtx.strokeStyle = '#2ed573';
+        canvasCtx.lineWidth = 2;
+        canvasCtx.strokeRect(cachedRoi.x, cachedRoi.y, cachedRoi.width, cachedRoi.height);
+
+        // Извлечение цвета
+        const rgb = getFastAverageRGB(cachedRoi);
+
+        if (rgb.count > 0) {
+          const now = performance.now() / 1000;
+          rgbBuffer.push(rgb);
+          timeBuffer.push(now);
+
+          while (timeBuffer.length > 0 && (now - timeBuffer[0]) > BUFFER_SECONDS) {
+            timeBuffer.shift();
+            rgbBuffer.shift();
+          }
+
+          const fillRatio = Math.min(1, (now - timeBuffer[0]) / BUFFER_SECONDS);
+          progressBar.style.width = `${fillRatio * 100}%`;
+
+          if (fillRatio < 1) {
+            statusText.innerText = "Сбор данных...";
+          } else {
+            statusText.innerText = "Измерение...";
+            const posSignal = processPOS(rgbBuffer);
+            const actualFps = timeBuffer.length / (now - timeBuffer[0]);
+            const bpm = calculateBPM(posSignal, actualFps);
+
+            if (bpm) bpmDisplay.innerText = bpm;
+          }
+        }
+      } else {
+        statusText.innerText = "Лицо не найдено";
+        progressBar.style.width = '0%';
+      }
+    }
+
+    function getForeheadBoundingBox(landmarks, width, height) {
+      let minX = width, maxX = 0, minY = height, maxY = 0;
+
+      FOREHEAD_INDEXES.forEach(idx => {
+        const x = landmarks[idx].x * width;
+        const y = landmarks[idx].y * height;
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      });
+
+      return {
+        x: Math.max(0, Math.floor(minX)),
+        y: Math.max(0, Math.floor(minY)),
+        width: Math.min(width, Math.floor(maxX - minX)),
+        height: Math.min(height, Math.floor(maxY - minY))
+      };
+    }
+
+    function getFastAverageRGB(roi) {
+      try {
+        const imageData = canvasCtx.getImageData(roi.x, roi.y, roi.width, roi.height);
+        const data = imageData.data;
+        let sumR = 0, sumG = 0, sumB = 0;
+        const totalPixels = data.length / 4;
+
+        for (let i = 0; i < data.length; i += 4) {
+          sumR += data[i];
+          sumG += data[i + 1];
+          sumB += data[i + 2];
+        }
+
+        return {
+          r: sumR / totalPixels,
+          g: sumG / totalPixels,
+          b: sumB / totalPixels,
+          count: totalPixels
+        };
+      } catch (e) {
+        return { r: 0, g: 0, b: 0, count: 0 };
+      }
+    }
+
+    function processPOS(buffer) {
+      const N = buffer.length;
+      let meanR = 0, meanG = 0, meanB = 0;
+
+      for (let i = 0; i < N; i++) {
+        meanR += buffer[i].r;
+        meanG += buffer[i].g;
+        meanB += buffer[i].b;
+      }
+      meanR /= N; meanG /= N; meanB /= N;
+
+      const S1 = [], S2 = [];
+      for (let i = 0; i < N; i++) {
+        const rNorm = buffer[i].r / (meanR || 1);
+        const gNorm = buffer[i].g / (meanG || 1);
+        const bNorm = buffer[i].b / (meanB || 1);
+
+        S1.push(gNorm - bNorm);
+        S2.push(gNorm + bNorm - 2 * rNorm);
+      }
+
+      const std1 = getStdDev(S1);
+      const std2 = getStdDev(S2);
+      const alpha = std2 === 0 ? 0 : std1 / std2;
+
+      const S = [];
+      for (let i = 0; i < N; i++) {
+        S.push(S1[i] + alpha * S2[i]);
+      }
+      return S;
+    }
+
+    function calculateBPM(signal, fps) {
+      const N = signal.length;
+      const mean = signal.reduce((a, b) => a + b, 0) / N;
+      const centered = signal.map(v => v - mean);
+      const windowed = centered.map((v, i) => v * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1)))));
+
+      let maxPower = 0;
+      let peakFreq = 0;
+
+      for (let freq = 0.8; freq <= 3.0; freq += 0.03) {
+        let real = 0, imag = 0;
+        for (let t = 0; t < N; t++) {
+          const angle = (2 * Math.PI * freq * t) / fps;
+          real += windowed[t] * Math.cos(angle);
+          imag -= windowed[t] * Math.sin(angle);
+        }
+        const power = real * real + imag * imag;
+        if (power > maxPower) {
+          maxPower = power;
+          peakFreq = freq;
+        }
+      }
+
+      return Math.round(peakFreq * 60);
+    }
+
+    function getStdDev(arr) {
+      const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+      return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
+    }
+  </script>
+</body>
+</html>
