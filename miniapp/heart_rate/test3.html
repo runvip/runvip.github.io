@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Измерение пульса через веб-камеру (MediaPipe + POS + FFT)</title>
+  
+  <!-- MediaPipe CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-top: 0;
+      margin-bottom: 5px;
+      font-size: 24px;
+    }
+
+    p.subtitle {
+      color: #aaa;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .container {
+      position: relative;
+      width: 640px;
+      height: 480px;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #000;
+    }
+
+    video { display: none; }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+    }
+
+    .dashboard {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      background: #2a2a2a;
+      padding: 15px 25px;
+      border-radius: 12px;
+    }
+
+    .bpm-box {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .bpm-value {
+      font-size: 48px;
+      font-weight: 800;
+      color: #ff4757;
+      font-family: monospace;
+    }
+
+    .bpm-unit {
+      font-size: 18px;
+      color: #888;
+      font-weight: bold;
+    }
+
+    .status-box {
+      text-align: right;
+    }
+
+    .status-text {
+      font-size: 14px;
+      color: #2ed573;
+      font-weight: 600;
+    }
+
+    .progress-bar-container {
+      width: 150px;
+      height: 8px;
+      background-color: #444;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #2ed573;
+      transition: width 0.1s linear;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>rPPG Измеритель Пульса</h1>
+  <p class="subtitle">Трекинг лица (MediaPipe) + Алгоритм POS + Анализ спектра (FFT)</p>
+
+  <div class="wrapper">
+    <div class="container">
+      <video id="video" playsinline></video>
+      <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+
+    <div class="dashboard">
+      <div class="bpm-box">
+        <span class="bpm-value" id="bpmDisplay">--</span>
+        <span class="bpm-unit">BPM</span>
+      </div>
+      <div class="status-box">
+        <div class="status-text" id="statusText">Загрузка модели...</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const bpmDisplay = document.getElementById('bpmDisplay');
+    const statusText = document.getElementById('statusText');
+    const progressBar = document.getElementById('progressBar');
+
+    // Ключевые точки MediaPipe для области лба (ROI)
+    const FOREHEAD_INDEXES = [10, 67, 109, 338, 297];
+
+    // Параметры буфера и кадров
+    const FPS = 30;
+    const BUFFER_SECONDS = 8; // Буфер 8 секунд для точного FFT
+    const BUFFER_SIZE = FPS * BUFFER_SECONDS;
+    const rgbBuffer = [];
+
+    // Инициализация MediaPipe Face Mesh
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: false,
+      minDetectionConfidence: 0.6,
+      minTrackingConfidence: 0.6
+    });
+
+    faceMesh.onResults(onResults);
+
+    // Запуск камеры
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({ image: videoElement });
+      },
+      width: 640,
+      height: 480
+    });
+
+    camera.start().then(() => {
+      statusText.innerText = "Поместите лицо в кадр";
+    });
+
+    // Обработчик каждого кадра
+    function onResults(results) {
+      canvasCtx.save();
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+      if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0];
+
+        // Получение полигона лба
+        const foreheadPolygon = FOREHEAD_INDEXES.map(index => ({
+          x: landmarks[index].x * canvasElement.width,
+          y: landmarks[index].y * canvasElement.height
+        }));
+
+        // Отрисовка контура ROI
+        drawPolygon(foreheadPolygon, '#2ed573');
+
+        // Считывание средних значений RGB из полигона
+        const rgb = getAverageRGBFromPolygon(foreheadPolygon);
+
+        if (rgb.count > 0) {
+          rgbBuffer.push(rgb);
+          
+          if (rgbBuffer.length > BUFFER_SIZE) {
+            rgbBuffer.shift();
+          }
+
+          // Обновление статус-бара сбора данных
+          const progress = Math.min(100, (rgbBuffer.length / BUFFER_SIZE) * 100);
+          progressBar.style.width = `${progress}%`;
+
+          if (rgbBuffer.length < BUFFER_SIZE) {
+            statusText.innerText = "Идет калибровка... Замрите";
+          } else {
+            statusText.innerText = "Измерение...";
+            
+            // 1. Применение алгоритма POS
+            const posSignal = processPOS(rgbBuffer);
+
+            // 2. Расчет BPM через FFT
+            const bpm = calculateBPM(posSignal, FPS);
+
+            if (bpm) {
+              bpmDisplay.innerText = bpm;
+            }
+          }
+        }
+      } else {
+        statusText.innerText = "Лицо не найдено";
+        progressBar.style.width = '0%';
+        rgbBuffer.length = 0; // Сброс буфера если лицо потеряно
+      }
+
+      canvasCtx.restore();
+    }
+
+    // --- АЛГОРИТМ POS (Plane-Orthogonal-to-Skin) ---
+    function processPOS(buffer) {
+      const N = buffer.length;
+      
+      // Средние значения по каналам
+      let meanR = 0, meanG = 0, meanB = 0;
+      for (let i = 0; i < N; i++) {
+        meanR += buffer[i].r;
+        meanG += buffer[i].g;
+        meanB += buffer[i].b;
+      }
+      meanR /= N; meanG /= N; meanB /= N;
+
+      // Нормализация каналов
+      const Cn = buffer.map(p => ({
+        r: p.r / (meanR || 1),
+        g: p.g / (meanG || 1),
+        b: p.b / (meanB || 1)
+      }));
+
+      // Проекция на ортогональные оси
+      const S = [];
+      const S1 = [], S2 = [];
+
+      for (let i = 0; i < N; i++) {
+        const s1 = Cn[i].g - Cn[i].b;
+        const s2 = Cn[i].g + Cn[i].b - 2 * Cn[i].r;
+        S1.push(s1);
+        S2.push(s2);
+      }
+
+      const std1 = getStdDev(S1);
+      const std2 = getStdDev(S2);
+      const alpha = std2 === 0 ? 0 : std1 / std2;
+
+      for (let i = 0; i < N; i++) {
+        S.push(S1[i] + alpha * S2[i]);
+      }
+
+      return S;
+    }
+
+    // --- РАСЧЕТ ВЧ/BPM ЧЕРЕЗ БЫСТРОЕ ПРЕОБРАЗОВАНИЕ ФУРЬЕ (FFT) ---
+    function calculateBPM(signal, sampleRate) {
+      const N = signal.length;
+      
+      // Детрендинг (удаление постоянной составляющей)
+      const mean = signal.reduce((a, b) => a + b, 0) / N;
+      const centered = signal.map(v => v - mean);
+
+      // Оконная функция Ханна (Hanning Window) для снижения утечки спектра
+      const windowed = centered.map((v, i) => v * (0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1)))));
+
+      // Простой алгоритм ДПФ (DFT) для диапазонов пульса (0.75 Гц - 3.0 Гц = 45 - 180 BPM)
+      const minFreq = 0.75; // 45 BPM
+      const maxFreq = 3.0;  // 180 BPM
+      
+      let maxPower = 0;
+      let peakFreq = 0;
+
+      // Сканирование частот с шагом 0.02 Гц
+      for (let freq = minFreq; freq <= maxFreq; freq += 0.02) {
+        let real = 0;
+        let imag = 0;
+
+        for (let t = 0; t < N; t++) {
+          const angle = (2 * Math.PI * freq * t) / sampleRate;
+          real += windowed[t] * Math.cos(angle);
+          imag -= windowed[t] * Math.sin(angle);
+        }
+
+        const power = real * real + imag * imag;
+
+        if (power > maxPower) {
+          maxPower = power;
+          peakFreq = freq;
+        }
+      }
+
+      return Math.round(peakFreq * 60);
+    }
+
+    // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+    function getStdDev(arr) {
+      const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+      return Math.sqrt(arr.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / arr.length);
+    }
+
+    function drawPolygon(points, color) {
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        canvasCtx.lineTo(points[i].x, points[i].y);
+      }
+      canvasCtx.closePath();
+      canvasCtx.strokeStyle = color;
+      canvasCtx.lineWidth = 2;
+      canvasCtx.stroke();
+    }
+
+    function getAverageRGBFromPolygon(points) {
+      let minX = canvasElement.width, maxX = 0, minY = canvasElement.height, maxY = 0;
+      points.forEach(p => {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+
+      const width = Math.max(1, Math.floor(maxX - minX));
+      const height = Math.max(1, Math.floor(maxY - minY));
+
+      const imageData = canvasCtx.getImageData(Math.floor(minX), Math.floor(minY), width, height);
+      const data = imageData.data;
+
+      let sumR = 0, sumG = 0, sumB = 0, count = 0;
+
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const px = minX + x;
+          const py = minY + y;
+
+          if (isPointInPolygon({x: px, y: py}, points)) {
+            const index = (y * width + x) * 4;
+            sumR += data[index];
+            sumG += data[index + 1];
+            sumB += data[index + 2];
+            count++;
+          }
+        }
+      }
+
+      return { r: sumR / (count || 1), g: sumG / (count || 1), b: sumB / (count || 1), count };
+    }
+
+    function isPointInPolygon(point, polygon) {
+      let isInside = false;
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].x, yi = polygon[i].y;
+        const xj = polygon[j].x, yj = polygon[j].y;
+
+        const intersect = ((yi > point.y) !== (yj > point.y)) &&
+            (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi);
+        if (intersect) isInside = !isInside;
+      }
+      return isInside;
+    }
+  </script>
+</body>
+</html>
